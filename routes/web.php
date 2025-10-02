@@ -2,9 +2,14 @@
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
+// Home page route
+Route::get('/', function () {
+    return view('tenants.dashboard');
+});
+
 //tenant dashboard view
 Route::get('/tenants/dashboard', function () {
-    return view('dashboard'); 
+    return view('tenants.dashboard'); 
 });
 Route::get('/tenants', [TenantController::class, 'index']); // Add this to list tenants
 Route::post('/tenants', [TenantController::class, 'store']);
