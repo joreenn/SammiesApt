@@ -1,0 +1,52 @@
+# Laravel Backend Files
+/api/vendor/
+/api/node_modules/
+/api/.env
+/api/.env.backup
+/api/.env.production
+/api/storage/*.key
+/api/storage/app/private/*
+/api/storage/framework/cache/*
+/api/storage/framework/sessions/*
+/api/storage/framework/testing/*
+/api/storage/framework/views/*
+/api/storage/logs/*
+/api/bootstrap/cache/*
+/api/public/hot
+/api/public/storage
+/api/.phpunit.result.cache
+/api/Homestead.json
+/api/Homestead.yaml
+/api/auth.json
+/api/npm-debug.log
+/api/yarn-error.log
+
+# Keep necessary directories
+!/api/storage/app/.gitignore
+!/api/storage/framework/.gitignore
+!/api/storage/logs/.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node modules (if any)
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# User uploaded files (optional - remove if you want to keep avatars in repo)
+/api/storage/app/public/avatars/*
+!/api/storage/app/public/avatars/.gitkeep

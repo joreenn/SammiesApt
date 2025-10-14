@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Status Check</title>
+    <style>
+        body { font-family: Arial; padding: 40px; background: #f0f0f0; }
+        .status { padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .loading { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 System Status Checker</h1>
+    <p>This page will check if your Laravel backend is working correctly.</p>
+    
+    <button onclick="checkStatus()">🔄 Check Status</button>
+    <button onclick="testAdd()">➕ Test Add Tenant</button>
+    <button onclick="location.href='index.html'">🏠 Go to Main App</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/tenants';
+
+        async function checkStatus() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="status loading">⏳ Checking backend status...</div>';
+
+            try {
+                // Test 1: Check if API is accessible
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                if (response.ok) {
+                    results.innerHTML = `
+                        <div class="status success">
+                            <h3>✅ Backend is Working!</h3>
+                            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                            <p><strong>API URL:</strong> ${API_URL}</p>
+                            <p><strong>Tenants in Database:</strong> ${data.data.length}</p>
+                            <p><strong>Response:</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                            <p>✅ No CORS errors!</p>
+                            <p>✅ Your application is ready to use!</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`Status ${response.status}`);
+                }
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ Backend Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>Laravel server is not running on port 8000</li>
+                            <li>CORS is still blocking requests</li>
+                            <li>Network connection issue</li>
+                        </ul>
+                        <p><strong>Solutions:</strong></p>
+                        <ol>
+                            <li>Start Laravel server:
+                                <pre>cd C:\\xampp\\htdocs\\SammiesAptt\\api
+php artisan serve --port=8000</pre>
+                            </li>
+                            <li>Clear cache:
+                                <pre>php artisan config:clear
+php artisan cache:clear</pre>
+                            </li>
+                            <li>Check if server is running:
+                                <pre>netstat -ano | findstr :8000</pre>
+                            </li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+
+        async function testAdd() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="status loading">⏳ Testing add tenant...</div>';
+
+            try {
+                const formData = new FormData();
+                formData.append('name', 'Test User');
+                formData.append('room', '999');
+                formData.append('contact', '555-TEST');
+                formData.append('email', 'test' + Date.now() + '@example.com');
+                formData.append('gender', 'Male');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    results.innerHTML = `
+                        <div class="status success">
+                            <h3>✅ Add Tenant Works!</h3>
+                            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                            <p><strong>Created Tenant:</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                            <p>✅ Backend is fully functional!</p>
+                            <p>✅ You can now use the main application!</p>
+                            <button onclick="location.href='index.html'">🏠 Go to Main App</button>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="status error">
+                            <h3>⚠️ Add Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Response:</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ Test Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Make sure Laravel server is running!</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-check on load
+        window.onload = checkStatus;
+    </script>
+</body>
+</html>

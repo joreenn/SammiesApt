@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Validation Testing</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .test-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .valid {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        .invalid {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+        .icon {
+            font-size: 20px;
+        }
+        .test-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            flex: 1;
+        }
+        .test-result {
+            font-size: 12px;
+            color: #666;
+            margin-left: 30px;
+        }
+        .rules {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .rules ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        .rules li {
+            margin: 5px 0;
+            color: #4b5563;
+        }
+        .legend {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .legend span {
+            display: inline-block;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Tenant Management - Validation Testing</h1>
+        
+        <div class="legend">
+            <span style="color: #10b981;">✅ Valid</span> | 
+            <span style="color: #ef4444;">❌ Invalid</span>
+        </div>
+
+        <div class="test-grid">
+            <!-- Name Validation -->
+            <div class="test-card">
+                <h3>👤 Name Validation</h3>
+                
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">Juan Dela Cruz</span>
+                </div>
+                <div class="test-result">Standard Filipino name</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">Maria O'Connor</span>
+                </div>
+                <div class="test-result">Name with apostrophe</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">Dr. John Smith Jr.</span>
+                </div>
+                <div class="test-result">Name with dots</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">123456</span>
+                </div>
+                <div class="test-result">Pure numbers not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">Juan@2024</span>
+                </div>
+                <div class="test-result">Special characters not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">John_Doe</span>
+                </div>
+                <div class="test-result">Underscore not allowed</div>
+
+                <div class="rules">
+                    <strong>📋 Rules:</strong>
+                    <ul>
+                        <li>Only letters, spaces, dots (.), hyphens (-), apostrophes (')</li>
+                        <li>Cannot be pure numbers</li>
+                        <li>Max 255 characters</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Room Validation -->
+            <div class="test-card">
+                <h3>🚪 Room Number Validation</h3>
+                
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">101</span>
+                </div>
+                <div class="test-result">Numeric room number</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">A1</span>
+                </div>
+                <div class="test-result">Alphanumeric format</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">B202</span>
+                </div>
+                <div class="test-result">Building + Room number</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">2F3</span>
+                </div>
+                <div class="test-result">Floor + Room format</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">-001</span>
+                </div>
+                <div class="test-result">Negative signs not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">A-1</span>
+                </div>
+                <div class="test-result">Hyphens not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">Room #5</span>
+                </div>
+                <div class="test-result">Symbols and spaces not allowed</div>
+
+                <div class="rules">
+                    <strong>📋 Rules:</strong>
+                    <ul>
+                        <li>Only letters (A-Z) and numbers (0-9)</li>
+                        <li>No symbols, spaces, or negative signs</li>
+                        <li>Must be unique (no duplicates)</li>
+                        <li>Max 50 characters</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact Validation -->
+            <div class="test-card">
+                <h3>📱 Contact Number Validation (PH)</h3>
+                
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">09123456789</span>
+                </div>
+                <div class="test-result">Standard PH mobile format</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">09987654321</span>
+                </div>
+                <div class="test-result">11 digits starting with 09</div>
+
+                <div class="test-item valid">
+                    <span class="icon">✅</span>
+                    <span class="test-value">+639123456789</span>
+                </div>
+                <div class="test-result">International format</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">12345678901</span>
+                </div>
+                <div class="test-result">Doesn't start with 09</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">09-123-456-789</span>
+                </div>
+                <div class="test-result">Hyphens not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">09 123 456 789</span>
+                </div>
+                <div class="test-result">Spaces not allowed</div>
+
+                <div class="test-item invalid">
+                    <span class="icon">❌</span>
+                    <span class="test-value">091234567</span>
+                </div>
+                <div class="test-result">Too short (needs 11 digits)</div>
+
+                <div class="rules">
+                    <strong>📋 Rules:</strong>
+                    <ul>
+                        <li>Format 1: <code>09XXXXXXXXX</code> (11 digits)</li>
+                        <li>Format 2: <code>+639XXXXXXXXX</code> (13 chars)</li>
+                        <li>No spaces, hyphens, or parentheses</li>
+                        <li>Must start with 09 or +639</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div class="test-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3 style="color: white; border-color: rgba(255,255,255,0.3);">📊 Validation Summary</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px;">👤</div>
+                        <div style="font-size: 20px; font-weight: bold;">Name</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Letters, spaces, .-'</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px;">🚪</div>
+                        <div style="font-size: 20px; font-weight: bold;">Room</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Alphanumeric + Unique</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px;">📱</div>
+                        <div style="font-size: 20px; font-weight: bold;">Contact</div>
+                        <div style="font-size: 14px; opacity: 0.9;">09XXXXXXXXX (11 digits)</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px;">📧</div>
+                        <div style="font-size: 20px; font-weight: bold;">Email</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Valid format + Unique</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

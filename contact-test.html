@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Number Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+        .valid {
+            border-left-color: #10b981;
+            background: #d1fae5;
+        }
+        .invalid {
+            border-left-color: #ef4444;
+            background: #fee2e2;
+        }
+        .number {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .result {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        h2 {
+            color: #333;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <h2>📱 Philippine Contact Number Validation Test</h2>
+    <p>Testing the regex pattern: <code>/^(09\d{9}|\+639\d{9})$/</code></p>
+
+    <button onclick="runTests()">🧪 Run Tests</button>
+
+    <div id="results"></div>
+
+    <script>
+        const phoneRegex = /^(09\d{9}|\+639\d{9})$/;
+
+        const testCases = [
+            // Valid cases
+            { number: '09123456789', expected: true, description: 'Standard PH mobile (09)' },
+            { number: '09987654321', expected: true, description: 'Another 09 format' },
+            { number: '+639123456789', expected: true, description: 'International format (+639)' },
+            { number: '+639987654321', expected: true, description: 'Another +639 format' },
+            
+            // Invalid cases
+            { number: '12345678901', expected: false, description: 'Doesn\'t start with 09' },
+            { number: '08123456789', expected: false, description: 'Starts with 08' },
+            { number: '091234567', expected: false, description: 'Too short (9 digits)' },
+            { number: '0912345678901', expected: false, description: 'Too long (13 digits)' },
+            { number: '09-123-456-789', expected: false, description: 'Contains hyphens' },
+            { number: '09 123 456 789', expected: false, description: 'Contains spaces' },
+            { number: '+63 9123456789', expected: false, description: 'Space after +63' },
+            { number: '639123456789', expected: false, description: 'Missing + in international' },
+            { number: '+639123', expected: false, description: 'Incomplete +639 number' },
+            { number: 'abc123456789', expected: false, description: 'Contains letters' }
+        ];
+
+        function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>Test Results:</h3>';
+
+            testCases.forEach((test, index) => {
+                const actual = phoneRegex.test(test.number);
+                const passed = actual === test.expected;
+                
+                const div = document.createElement('div');
+                div.className = `test-case ${passed ? 'valid' : 'invalid'}`;
+                div.innerHTML = `
+                    <div class="number">${passed ? '✅' : '❌'} "${test.number}"</div>
+                    <div class="result">
+                        <strong>${test.description}</strong><br>
+                        Expected: ${test.expected ? 'Valid' : 'Invalid'} | 
+                        Got: ${actual ? 'Valid' : 'Invalid'}
+                        ${!passed ? ' <strong>FAILED!</strong>' : ''}
+                    </div>
+                `;
+                resultsDiv.appendChild(div);
+            });
+
+            // Summary
+            const passed = testCases.filter((t, i) => phoneRegex.test(t.number) === t.expected).length;
+            const total = testCases.length;
+            
+            const summary = document.createElement('div');
+            summary.style.cssText = 'margin-top: 20px; padding: 15px; background: #667eea; color: white; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold;';
+            summary.innerHTML = `📊 Results: ${passed}/${total} tests passed (${Math.round(passed/total*100)}%)`;
+            resultsDiv.appendChild(summary);
+        }
+
+        // Auto-run on load
+        window.onload = runTests;
+    </script>
+</body>
+</html>
