@@ -44,19 +44,15 @@
 <body>
     <div id="root"></div>
     
-    <!-- All Components in One Script Block -->
+    <!-- Import Components -->
+    <script type="text/babel" src="./Dashboard.jsx"></script>
+    <script type="text/babel" src="./TenantManagement.jsx"></script>
+    <script type="text/babel" src="./App.jsx"></script>
+
+    <!-- Render the app -->
     <script type="text/babel">
-        // See full component code in external file: index-full.html
-        // This is a simplified inline version
-        const { useState, useEffect } = React;
-        const API_BASE_URL = 'http://localhost:8000/api/tenants';
-
-        // ============ LOAD EXTERNAL COMPONENTS ============
-        // Dashboard, TenantManagement, and App components
-        // are defined inline below
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
-
-    <!-- Load complete application -->
-    <script type="text/babel" src="./app-complete.jsx"></script>
 </body>
 </html>

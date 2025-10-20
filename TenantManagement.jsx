@@ -1,5 +1,53 @@
 import React, { useEffect, useState } from "react";
 
+// Sidebar Component
+function Sidebar({ onNavigate }) {
+  const handleLogout = () => {
+    if (window.confirm("⚠️ Are you sure you want to logout?")) {
+      alert("✅ You have been logged out successfully!");
+      window.location.reload();
+    }
+  };
+
+  return (
+    <div style={sidebarStyle}>
+      <h2 style={{ color: "white", padding: "20px", fontSize: "18px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        THE SAMMIE'S<br />APARTMENT
+      </h2>
+      
+      <nav style={{ padding: "20px 0" }}>
+        <div style={menuItemStyle} onClick={() => onNavigate('dashboard')}>
+          <span style={{ marginRight: 10 }}>📊</span> Dashboard
+        </div>
+        <div style={{ ...menuItemStyle, background: "rgba(255,255,255,0.1)" }}>
+          <span style={{ marginRight: 10 }}>👥</span> Tenant Management
+        </div>
+        <div style={menuItemStyle}>
+          <span style={{ marginRight: 10 }}>📅</span> Reservation
+        </div>
+        <div style={menuItemStyle}>
+          <span style={{ marginRight: 10 }}>💰</span> Billing
+        </div>
+        <div style={menuItemStyle}>
+          <span style={{ marginRight: 10 }}>💬</span> Communication
+        </div>
+        <div style={menuItemStyle}>
+          <span style={{ marginRight: 10 }}>🔧</span> Maintenance
+        </div>
+        <div style={menuItemStyle}>
+          <span style={{ marginRight: 10 }}>⚙️</span> Admin Settings
+        </div>
+      </nav>
+
+      <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
+        <button onClick={handleLogout} style={logoutBtnStyle}>
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Toast notification
 function Toast({ message, type = "success", onClose }) {
   useEffect(() => {
@@ -122,7 +170,7 @@ function EditViewModal({ tenant, editForm, setEditForm, onClose, onSave, errors 
 const API_BASE_URL = 'http://localhost:8000/api/tenants';
 
 // Main Component
-export default function TenantManagement() {
+export default function TenantManagement({ onNavigate }) {
   const [tenants, setTenants] = useState([]);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -307,9 +355,12 @@ export default function TenantManagement() {
   };
 
   return (
-    <div style={{ padding: 40, background: "#f1f5f9", minHeight: "100vh" }}>
-      <h2>🏠 Tenant Management</h2>
-      <button style={addBtnStyle} onClick={() => setIsAddOpen(true)}>➕ Add Tenant</button>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f5f5dc" }}>
+      <Sidebar onNavigate={onNavigate} />
+      
+      <div style={{ flex: 1, padding: 40 }}>
+        <h2 style={{ fontSize: 32, color: "#2c3e50", marginBottom: 20 }}>🏠 Tenant Management</h2>
+        <button style={addBtnStyle} onClick={() => setIsAddOpen(true)}>➕ Add Tenant</button>
       {/* Table */}
       <div style={{ marginTop: 20, background: "white", borderRadius: 8, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -431,11 +482,42 @@ export default function TenantManagement() {
       )}
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </div>
     </div>
   );
 }
 
 // Styles
+const sidebarStyle = {
+  width: 250,
+  background: "linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%)",
+  color: "white",
+  minHeight: "100vh",
+  position: "relative"
+};
+
+const menuItemStyle = {
+  padding: "15px 20px",
+  cursor: "pointer",
+  transition: "all 0.3s",
+  display: "flex",
+  alignItems: "center",
+  fontSize: 14
+};
+
+const logoutBtnStyle = {
+  width: "calc(100% - 40px)",
+  padding: "12px",
+  background: "#ef4444",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 500,
+  transition: "all 0.3s"
+};
+
 const modalStyle = { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "white", padding: 20, borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.3)", zIndex: 1000, width: 400, maxHeight: "90vh", overflowY: "auto" };
 const formGroup = { marginBottom: 10, display: "flex", flexDirection: "column" };
 const inputStyle = { padding: 8, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 };
