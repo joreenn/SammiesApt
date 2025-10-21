@@ -22,7 +22,7 @@ function Sidebar({ onNavigate }) {
         <div style={{ ...menuItemStyle, background: "rgba(255,255,255,0.1)" }}>
           <span style={{ marginRight: 10 }}>👥</span> Tenant Management
         </div>
-        <div style={menuItemStyle}>
+        <div style={menuItemStyle} onClick={() => onNavigate('reservation')}>
           <span style={{ marginRight: 10 }}>📅</span> Reservation
         </div>
         <div style={menuItemStyle}>

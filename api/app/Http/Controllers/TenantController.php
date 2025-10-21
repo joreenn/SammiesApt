@@ -54,7 +54,6 @@ class TenantController extends Controller
                     'required',
                     'string',
                     'max:50',
-                    'regex:/^[A-Z0-9]+$/i', // Only letters and numbers, no symbols or negative
                     'unique:tenants,room' // Prevent duplicate room numbers
                 ],
                 'contact' => [
@@ -68,7 +67,6 @@ class TenantController extends Controller
                 // Custom error messages
                 'name.regex' => 'Name must contain only letters, spaces, dots, hyphens, and apostrophes.',
                 'name.not_regex' => 'Name cannot be pure numbers.',
-                'room.regex' => 'Room number must contain only letters and numbers (no symbols or negative signs).',
                 'room.unique' => 'This room number is already taken.',
                 'contact.regex' => 'Contact must be a valid Philippine number (e.g., 09123456789 or +639123456789).',
                 'contact.digits_between' => 'Contact must be 11 digits (09XXXXXXXXX) or 13 digits (+639XXXXXXXXX).'
@@ -139,7 +137,6 @@ class TenantController extends Controller
                     'required',
                     'string',
                     'max:50',
-                    'regex:/^[A-Z0-9]+$/i',
                     'unique:tenants,room,' . $id // Exclude current tenant from unique check
                 ],
                 'contact' => [
@@ -153,7 +150,6 @@ class TenantController extends Controller
             ], [
                 'name.regex' => 'Name must contain only letters, spaces, dots, hyphens, and apostrophes.',
                 'name.not_regex' => 'Name cannot be pure numbers.',
-                'room.regex' => 'Room number must contain only letters and numbers (no symbols or negative signs).',
                 'room.unique' => 'This room number is already taken.',
                 'contact.regex' => 'Contact must be a valid Philippine number (e.g., 09123456789 or +639123456789).',
                 'contact.digits_between' => 'Contact must be 11 digits (09XXXXXXXXX) or 13 digits (+639XXXXXXXXX).'

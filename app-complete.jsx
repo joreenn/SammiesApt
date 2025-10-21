@@ -1,6 +1,7 @@
 // All components in one file - no ES6 modules
 const { useState, useEffect, useMemo, useCallback } = React;
 const API_BASE_URL = 'http://localhost:8000/api/tenants';
+const RESERVATION_API_URL = 'http://localhost:8000/api/reservations';
 
 // ============================================
 // DEFAULT AVATAR PLACEHOLDERS (Data URIs - No 404 errors)
@@ -391,6 +392,265 @@ const STYLES = {
     fontSize: 16,
     fontWeight: 500,
     transition: "all 0.3s"
+  },
+  // Reservation Management Styles
+  roomGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: 25,
+    marginTop: 30
+  },
+  roomCard: {
+    background: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+    transition: "transform 0.3s, box-shadow 0.3s"
+  },
+  roomImage: {
+    width: "100%",
+    height: 200,
+    objectFit: "cover"
+  },
+  roomContent: {
+    padding: 20
+  },
+  roomTitle: {
+    fontSize: 20,
+    fontWeight: 600,
+    color: "#2c3e50",
+    marginBottom: 15,
+    textAlign: "center"
+  },
+  roomButtons: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  editBtn: {
+    padding: "10px 20px",
+    background: "#475569",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 500,
+    transition: "all 0.3s"
+  },
+  viewBtn: {
+    padding: "10px 20px",
+    background: "#475569",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 500,
+    transition: "all 0.3s"
+  },
+  statusBadgeOccupied: {
+    padding: "10px 20px",
+    background: "#ef4444",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "default"
+  },
+  statusBadgeAvailable: {
+    padding: "10px 20px",
+    background: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "default"
+  },
+  roomDetailsCard: {
+    background: "white",
+    borderRadius: 12,
+    padding: 30,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+    marginTop: 30
+  },
+  roomDetailsImage: {
+    width: "100%",
+    maxHeight: 400,
+    objectFit: "cover",
+    borderRadius: 12,
+    marginBottom: 30
+  },
+  detailsHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20
+  },
+  detailsTitle: {
+    fontSize: 24,
+    fontWeight: 600,
+    color: "#2c3e50",
+    display: "flex",
+    alignItems: "center",
+    gap: 10
+  },
+  editIconBtn: {
+    background: "none",
+    border: "none",
+    fontSize: 24,
+    cursor: "pointer",
+    color: "#475569",
+    transition: "color 0.3s"
+  },
+  detailsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 20,
+    marginBottom: 30
+  },
+  detailItem: {
+    marginBottom: 15
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: "#6c757d",
+    marginBottom: 5,
+    fontWeight: 500
+  },
+  detailValue: {
+    fontSize: 16,
+    color: "#2c3e50",
+    fontWeight: 400
+  },
+  priceTag: {
+    fontSize: 32,
+    fontWeight: 700,
+    color: "#475569",
+    textAlign: "center",
+    padding: "20px",
+    background: "#f8f9fa",
+    borderRadius: 12,
+    marginBottom: 20
+  },
+  proceedBtn: {
+    width: "100%",
+    padding: "15px",
+    background: "#475569",
+    color: "white",
+    border: "none",
+    borderRadius: 12,
+    cursor: "pointer",
+    fontSize: 18,
+    fontWeight: 600,
+    transition: "all 0.3s"
+  },
+  editModal: {
+    background: "white",
+    padding: 30,
+    borderRadius: 12,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+    width: 500,
+    maxWidth: "90%",
+    maxHeight: "90vh",
+    overflowY: "auto"
+  },
+  editModalTitle: {
+    fontSize: 24,
+    fontWeight: 600,
+    color: "#2c3e50",
+    marginBottom: 25,
+    textAlign: "center"
+  },
+  closeIcon: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    background: "none",
+    border: "none",
+    fontSize: 24,
+    cursor: "pointer",
+    color: "#6c757d"
+  },
+  saveChangeBtn: {
+    width: "100%",
+    padding: "12px",
+    background: "#475569",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 16,
+    fontWeight: 600,
+    marginTop: 20,
+    transition: "all 0.3s"
+  },
+  // Booking Modal Styles
+  bookingModal: {
+    background: "white",
+    padding: 30,
+    borderRadius: 12,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+    width: 600,
+    maxWidth: "90%",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    position: "relative"
+  },
+  bookingModalTitle: {
+    fontSize: 24,
+    fontWeight: 600,
+    color: "#2c3e50",
+    marginBottom: 25,
+    textAlign: "center"
+  },
+  bookingFormRow: {
+    display: "flex",
+    gap: 15,
+    marginBottom: 15
+  },
+  bookingFormGroup: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column"
+  },
+  bookingLabel: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#2c3e50",
+    marginBottom: 8
+  },
+  bookingInput: {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    fontSize: 14,
+    transition: "border 0.3s"
+  },
+  bookingSelect: {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    fontSize: 14,
+    background: "white",
+    cursor: "pointer",
+    transition: "border 0.3s"
+  },
+  confirmBtn: {
+    width: "100%",
+    padding: "14px",
+    background: "#475569",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 18,
+    fontWeight: 600,
+    marginTop: 20,
+    transition: "all 0.3s"
   }
 };
 
@@ -471,7 +731,11 @@ function Sidebar({ onNavigate, currentPage, onLogout }) {
         >
           <span style={STYLES.menuIcon}>👥</span> Tenant Management
         </div>
-        <div className="menu-item" style={STYLES.menuItem}>
+        <div 
+          className="menu-item"
+          style={getMenuItemStyle('reservation')}
+          onClick={() => onNavigate('reservation')}
+        >
           <span style={STYLES.menuIcon}>📅</span> Reservation
         </div>
         <div className="menu-item" style={STYLES.menuItem}>
@@ -686,6 +950,24 @@ function Dashboard({ onNavigate }) {
 
 function EditViewModal({ tenant, editForm, setEditForm, onClose, onSave, errors }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [rooms, setRooms] = useState([]);
+  
+  // Fetch room availability from localStorage
+  useEffect(() => {
+    const savedRooms = localStorage.getItem('apartmentRooms');
+    if (savedRooms) {
+      setRooms(JSON.parse(savedRooms));
+    } else {
+      // Initialize default 10 rooms if not exists
+      const defaultRooms = Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1,
+        number: `Room ${String(i + 1).padStart(2, '0')}`,
+        status: 'available'
+      }));
+      setRooms(defaultRooms);
+      localStorage.setItem('apartmentRooms', JSON.stringify(defaultRooms));
+    }
+  }, []);
   
   const modalOverlay = {
     position: "fixed",
@@ -768,13 +1050,22 @@ function EditViewModal({ tenant, editForm, setEditForm, onClose, onSave, errors 
           <label>Room:</label>
           {isEditing ? (
             <>
-              <input 
-                style={inputStyle} 
-                type="text" 
-                placeholder="e.g., 101, A1, B202" 
-                value={editForm.room || ""} 
-                onChange={(e) => setEditForm({ ...editForm, room: e.target.value })} 
-              />
+              <select
+                style={inputStyle}
+                value={editForm.room || ""}
+                onChange={(e) => setEditForm({ ...editForm, room: e.target.value })}
+              >
+                <option value="">Select Room</option>
+                {rooms.map(room => (
+                  <option 
+                    value={room.number} 
+                    disabled={room.status === 'occupied' && room.number !== tenant.room}
+                    key={room.id}
+                  >
+                    {room.number} {room.status === 'occupied' && room.number !== tenant.room ? '🔴 Occupied' : '🟢 Available'}
+                  </option>
+                ))}
+              </select>
               {errors.room && <p style={errorText}>{errors.room}</p>}
             </>
           ) : (
@@ -862,6 +1153,25 @@ function EditViewModal({ tenant, editForm, setEditForm, onClose, onSave, errors 
 }
 
 function AddModal({ addForm, setAddForm, onClose, onSave, errors }) {
+  const [rooms, setRooms] = useState([]);
+  
+  // Fetch room availability from localStorage
+  useEffect(() => {
+    const savedRooms = localStorage.getItem('apartmentRooms');
+    if (savedRooms) {
+      setRooms(JSON.parse(savedRooms));
+    } else {
+      // Initialize default 10 rooms if not exists
+      const defaultRooms = Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1,
+        number: `Room ${String(i + 1).padStart(2, '0')}`,
+        status: 'available'
+      }));
+      setRooms(defaultRooms);
+      localStorage.setItem('apartmentRooms', JSON.stringify(defaultRooms));
+    }
+  }, []);
+
   const modalOverlay = {
     position: "fixed",
     top: 0,
@@ -932,13 +1242,22 @@ function AddModal({ addForm, setAddForm, onClose, onSave, errors }) {
         
         <div style={formGroup}>
           <label>Room: *</label>
-          <input 
-            style={inputStyle} 
-            type="text" 
-            placeholder="e.g., 101, A1, B202" 
-            value={addForm.room} 
-            onChange={(e) => setAddForm({ ...addForm, room: e.target.value })} 
-          />
+          <select
+            style={inputStyle}
+            value={addForm.room}
+            onChange={(e) => setAddForm({ ...addForm, room: e.target.value })}
+          >
+            <option value="">Select Room</option>
+            {rooms.map(room => (
+              <option 
+                value={room.number} 
+                disabled={room.status === 'occupied'}
+                key={room.id}
+              >
+                {room.number} {room.status === 'occupied' ? '🔴 Occupied' : '🟢 Available'}
+              </option>
+            ))}
+          </select>
           {errors.room && <p style={errorText}>{errors.room}</p>}
         </div>
         
@@ -1016,7 +1335,32 @@ function TenantManagement({ onNavigate }) {
     try {
       const res = await fetch(API_BASE_URL);
       const data = await res.json();
-      setTenants(Array.isArray(data.data) ? data.data : []);
+      const tenantList = Array.isArray(data.data) ? data.data : [];
+      setTenants(tenantList);
+      
+      // Sync room availability with current tenants
+      const savedRooms = localStorage.getItem('apartmentRooms');
+      if (savedRooms) {
+        const rooms = JSON.parse(savedRooms);
+        
+        // Mark all rooms as available first
+        const updatedRooms = rooms.map(room => ({
+          ...room,
+          status: 'available',
+          tenantName: null
+        }));
+        
+        // Mark rooms with tenants as occupied
+        tenantList.forEach(tenant => {
+          const roomIndex = updatedRooms.findIndex(r => r.number === tenant.room);
+          if (roomIndex !== -1) {
+            updatedRooms[roomIndex].status = 'occupied';
+            updatedRooms[roomIndex].tenantName = tenant.name;
+          }
+        });
+        
+        localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+      }
     } catch (err) {
       console.error('Error fetching tenants:', err);
       setToast({ message: "❌ Failed to fetch tenants", type: "error" });
@@ -1038,8 +1382,6 @@ function TenantManagement({ onNavigate }) {
     
     if (!form.room || !form.room.trim()) {
       errs.room = "Room is required";
-    } else if (!/^[A-Z0-9]+$/i.test(form.room)) {
-      errs.room = "Room must be alphanumeric only (no spaces or symbols)";
     }
     
     if (!form.contact || !form.contact.trim()) {
@@ -1092,6 +1434,18 @@ function TenantManagement({ onNavigate }) {
         throw new Error(result.message || 'Failed to add tenant');
       }
       
+      // Update room status to occupied in localStorage
+      const savedRooms = localStorage.getItem('apartmentRooms');
+      if (savedRooms) {
+        const rooms = JSON.parse(savedRooms);
+        const updatedRooms = rooms.map(room => 
+          room.number === addForm.room 
+            ? { ...room, status: 'occupied', tenantName: addForm.name }
+            : room
+        );
+        localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+      }
+      
       setToast({ message: "✅ Tenant added successfully", type: "success" });
       setIsAddOpen(false);
       setAddForm({ name: "", room: "", contact: "", email: "", gender: "Male", avatar: null });
@@ -1108,6 +1462,9 @@ function TenantManagement({ onNavigate }) {
       return;
     }
     setErrors({});
+    
+    const oldRoom = selectedTenant.room;
+    const newRoom = editForm.room;
     
     const formData = new FormData();
     formData.append('_method', 'PUT');
@@ -1137,6 +1494,24 @@ function TenantManagement({ onNavigate }) {
         throw new Error(result.message || 'Failed to update tenant');
       }
       
+      // Update room statuses if room changed
+      if (oldRoom !== newRoom) {
+        const savedRooms = localStorage.getItem('apartmentRooms');
+        if (savedRooms) {
+          const rooms = JSON.parse(savedRooms);
+          const updatedRooms = rooms.map(room => {
+            if (room.number === oldRoom) {
+              return { ...room, status: 'available', tenantName: null };
+            }
+            if (room.number === newRoom) {
+              return { ...room, status: 'occupied', tenantName: editForm.name };
+            }
+            return room;
+          });
+          localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+        }
+      }
+      
       setToast({ message: "✅ Tenant updated successfully", type: "success" });
       setIsEditOpen(false);
       fetchTenants();
@@ -1148,12 +1523,29 @@ function TenantManagement({ onNavigate }) {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this tenant?")) return;
     
+    // Find the tenant's room before deleting
+    const tenantToDelete = tenants.find(t => t.id === id);
+    
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE'
       });
       
       if (!res.ok) throw new Error('Failed to delete tenant');
+      
+      // Update room status to available in localStorage
+      if (tenantToDelete && tenantToDelete.room) {
+        const savedRooms = localStorage.getItem('apartmentRooms');
+        if (savedRooms) {
+          const rooms = JSON.parse(savedRooms);
+          const updatedRooms = rooms.map(room => 
+            room.number === tenantToDelete.room 
+              ? { ...room, status: 'available', tenantName: null }
+              : room
+          );
+          localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+        }
+      }
       
       setToast({ message: "✅ Tenant deleted successfully", type: "success" });
       fetchTenants();
@@ -1265,6 +1657,607 @@ function TenantManagement({ onNavigate }) {
 }
 
 // ============================================
+// RESERVATION MANAGEMENT COMPONENT
+// ============================================
+
+function ReservationManagement({ onNavigate }) {
+  const [rooms, setRooms] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [bookingForm, setBookingForm] = useState({
+    full_name: '',
+    email: '',
+    contact_number: '',
+    down_payment: '',
+    mode_of_payment: 'Cash',
+    reservation_status: 'Available'
+  });
+  const [toast, setToast] = useState(null);
+
+  // Default room image
+  const DEFAULT_ROOM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmb250LXNpemU9IjY0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzZjNzU3ZCIgZm9udC1mYW1pbHk9IkFyaWFsIj7wn4+qPC90ZXh0Pjwvc3ZnPg==';
+
+  // Initialize rooms data
+  useEffect(() => {
+    const initialRooms = Array.from({ length: 10 }, (_, i) => ({
+      id: i + 1,
+      number: `Room ${String(i + 1).padStart(2, '0')}`,
+      image: DEFAULT_ROOM_IMAGE,
+      inclusions: 'Kitchen, Bed Frame, Comfort Room',
+      address: 'Washington Village, Maa',
+      others: 'Water is divided depending on bill\n13 kWh',
+      price: 6000,
+      status: 'available'
+    }));
+    
+    // Load from localStorage if exists
+    const savedRooms = localStorage.getItem('apartmentRooms');
+    if (savedRooms) {
+      setRooms(JSON.parse(savedRooms));
+    } else {
+      setRooms(initialRooms);
+      localStorage.setItem('apartmentRooms', JSON.stringify(initialRooms));
+    }
+  }, []);
+
+  // Fetch tenants and update room statuses
+  const fetchTenants = useCallback(async () => {
+    try {
+      const res = await fetch(API_BASE_URL);
+      const data = await res.json();
+      const tenantList = Array.isArray(data.data) ? data.data : [];
+      setTenants(tenantList);
+
+      // Update room statuses based on tenant occupancy
+      setRooms(prevRooms => {
+        const updatedRooms = prevRooms.map(room => {
+          const tenant = tenantList.find(t => t.room === room.number);
+          return {
+            ...room,
+            status: tenant ? 'occupied' : 'available',
+            tenantName: tenant ? tenant.name : null
+          };
+        });
+        localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+        return updatedRooms;
+      });
+    } catch (err) {
+      console.error('Error fetching tenants:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTenants();
+  }, [fetchTenants]);
+
+  const handleLogout = useCallback(() => {
+    setShowLogoutModal(true);
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    setShowLogoutModal(false);
+    alert("✅ You have been logged out successfully!");
+    window.location.reload();
+  }, []);
+
+  const handleViewRoom = useCallback((room) => {
+    setSelectedRoom(room);
+    setIsEditingDetails(false);
+  }, []);
+
+  const handleEditRoom = useCallback((room) => {
+    setEditForm({ ...room });
+    setShowEditModal(true);
+  }, []);
+
+  const handleSaveRoomDetails = useCallback(() => {
+    if (!editForm.number || !editForm.inclusions || !editForm.address || !editForm.price) {
+      setToast({ message: "❌ Please fill all required fields", type: "error" });
+      return;
+    }
+
+    const updatedRooms = rooms.map(room => 
+      room.id === editForm.id ? { ...room, ...editForm } : room
+    );
+    
+    setRooms(updatedRooms);
+    localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+    
+    if (selectedRoom && selectedRoom.id === editForm.id) {
+      setSelectedRoom({ ...selectedRoom, ...editForm });
+    }
+    
+    setIsEditingDetails(false);
+    setToast({ message: "✅ Room details updated successfully", type: "success" });
+  }, [editForm, rooms, selectedRoom]);
+
+  const handleImageUpload = useCallback((e, roomId) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const updatedRooms = rooms.map(room =>
+          room.id === roomId ? { ...room, image: reader.result } : room
+        );
+        setRooms(updatedRooms);
+        localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+        
+        if (editForm.id === roomId) {
+          setEditForm({ ...editForm, image: reader.result });
+        }
+        
+        setToast({ message: "✅ Room photo updated successfully", type: "success" });
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [rooms, editForm]);
+
+  const handleProceed = useCallback(() => {
+    setShowBookingModal(true);
+  }, []);
+
+  const handleBookingSubmit = useCallback(async () => {
+    // Validation
+    if (!bookingForm.full_name || !bookingForm.email || !bookingForm.contact_number || !bookingForm.down_payment) {
+      setToast({ message: "❌ Please fill in all required fields", type: "error" });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(bookingForm.email)) {
+      setToast({ message: "❌ Please enter a valid email address", type: "error" });
+      return;
+    }
+
+    // Contact number validation (Philippine format)
+    const contactRegex = /^(09\d{9}|\+639\d{9})$/;
+    if (!contactRegex.test(bookingForm.contact_number)) {
+      setToast({ message: "❌ Contact must be in format 09XXXXXXXXX or +639XXXXXXXXX", type: "error" });
+      return;
+    }
+
+    // Down payment validation
+    if (parseFloat(bookingForm.down_payment) <= 0) {
+      setToast({ message: "❌ Down payment must be greater than 0", type: "error" });
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          room_number: selectedRoom.number,
+          full_name: bookingForm.full_name,
+          email: bookingForm.email,
+          contact_number: bookingForm.contact_number,
+          down_payment: parseFloat(bookingForm.down_payment),
+          mode_of_payment: bookingForm.mode_of_payment,
+          reservation_status: bookingForm.reservation_status
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setToast({ message: "✅ Reservation created successfully!", type: "success" });
+        
+        // Reset forms and close modals
+        setShowBookingModal(false);
+        setSelectedRoom(null);
+        setBookingForm({
+          full_name: '',
+          email: '',
+          contact_number: '',
+          down_payment: '',
+          mode_of_payment: 'Cash',
+          reservation_status: 'Available'
+        });
+
+        // Update room status if reservation is Occupied
+        if (bookingForm.reservation_status === 'Occupied') {
+          const updatedRooms = rooms.map(room =>
+            room.id === selectedRoom.id 
+              ? { ...room, status: 'occupied', tenantName: bookingForm.full_name }
+              : room
+          );
+          setRooms(updatedRooms);
+          localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+        }
+      } else {
+        setToast({ message: "❌ " + (data.message || "Failed to create reservation"), type: "error" });
+      }
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      setToast({ message: "❌ Error creating reservation. Please try again.", type: "error" });
+    }
+  }, [bookingForm, selectedRoom, rooms]);
+
+  // Room Grid View
+  const renderRoomGrid = () => (
+    <div style={STYLES.roomGrid}>
+      {rooms.map(room => (
+        <div key={room.id} style={STYLES.roomCard}>
+          <img src={room.image} alt={room.number} style={STYLES.roomImage} />
+          <div style={STYLES.roomContent}>
+            <h3 style={STYLES.roomTitle}>{room.number}</h3>
+            <div style={STYLES.roomButtons}>
+              <button 
+                onClick={() => handleEditRoom(room)} 
+                style={STYLES.editBtn}
+              >
+                Edit
+              </button>
+              <span style={room.status === 'occupied' ? STYLES.statusBadgeOccupied : STYLES.statusBadgeAvailable}>
+                {room.status === 'occupied' ? 'Occupied' : 'Available'}
+              </span>
+            </div>
+            {room.status === 'available' && (
+              <button 
+                onClick={() => handleViewRoom(room)} 
+                style={{ ...STYLES.viewBtn, marginTop: 10, width: '100%' }}
+              >
+                View
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Room Details View
+  const renderRoomDetails = () => {
+    if (!selectedRoom) return null;
+
+    return (
+      <div style={STYLES.roomDetailsCard}>
+        <img src={selectedRoom.image} alt={selectedRoom.number} style={STYLES.roomDetailsImage} />
+        
+        <div style={STYLES.detailsHeader}>
+          <h2 style={STYLES.detailsTitle}>
+            DETAILS
+            <button 
+              onClick={() => {
+                setEditForm({ ...selectedRoom });
+                setIsEditingDetails(true);
+              }} 
+              style={STYLES.editIconBtn}
+              title="Edit Details"
+            >
+              ✏️
+            </button>
+          </h2>
+          <span style={STYLES.statusBadgeAvailable}>Available</span>
+        </div>
+
+        <div style={STYLES.detailsGrid}>
+          <div style={STYLES.detailItem}>
+            <div style={STYLES.detailLabel}>Room Number:</div>
+            <div style={STYLES.detailValue}>{selectedRoom.number}</div>
+          </div>
+          
+          <div style={STYLES.detailItem}>
+            <div style={STYLES.detailLabel}>Inclusions:</div>
+            <div style={STYLES.detailValue}>{selectedRoom.inclusions}</div>
+          </div>
+          
+          <div style={STYLES.detailItem}>
+            <div style={STYLES.detailLabel}>Address:</div>
+            <div style={STYLES.detailValue}>{selectedRoom.address}</div>
+          </div>
+          
+          <div style={STYLES.detailItem}>
+            <div style={STYLES.detailLabel}>Others:</div>
+            <div style={STYLES.detailValue} dangerouslySetInnerHTML={{ __html: selectedRoom.others.replace(/\n/g, '<br>') }} />
+          </div>
+        </div>
+
+        <div style={STYLES.priceTag}>₱ {selectedRoom.price.toLocaleString()}</div>
+        
+        <button onClick={handleProceed} style={STYLES.proceedBtn}>
+          Proceed
+        </button>
+        
+        <button 
+          onClick={() => setSelectedRoom(null)} 
+          style={{ ...STYLES.proceedBtn, background: '#6c757d', marginTop: 10 }}
+        >
+          Back to Rooms
+        </button>
+      </div>
+    );
+  };
+
+  // Edit Modal
+  const renderEditModal = () => {
+    if (!showEditModal) return null;
+
+    return (
+      <div style={STYLES.logoutModalOverlay} onClick={() => setShowEditModal(false)}>
+        <div style={{ ...STYLES.editModal, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => setShowEditModal(false)} style={STYLES.closeIcon}>❌</button>
+          
+          <h2 style={STYLES.editModalTitle}>Edit Details</h2>
+          
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Room Number:</label>
+            <input
+              type="text"
+              value={editForm.number || ''}
+              onChange={(e) => setEditForm({ ...editForm, number: e.target.value })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Inclusions:</label>
+            <input
+              type="text"
+              value={editForm.inclusions || ''}
+              onChange={(e) => setEditForm({ ...editForm, inclusions: e.target.value })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Address:</label>
+            <input
+              type="text"
+              value={editForm.address || ''}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Others:</label>
+            <textarea
+              value={editForm.others || ''}
+              onChange={(e) => setEditForm({ ...editForm, others: e.target.value })}
+              style={{ ...STYLES.input, minHeight: 80, resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Price:</label>
+            <input
+              type="number"
+              value={editForm.price || ''}
+              onChange={(e) => setEditForm({ ...editForm, price: parseInt(e.target.value) || 0 })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Room Photo:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageUpload(e, editForm.id)}
+              style={STYLES.input}
+            />
+          </div>
+
+          <button onClick={() => {
+            const updatedRooms = rooms.map(room =>
+              room.id === editForm.id ? { ...room, ...editForm } : room
+            );
+            setRooms(updatedRooms);
+            localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
+            setShowEditModal(false);
+            setToast({ message: "✅ Room updated successfully", type: "success" });
+          }} style={STYLES.saveChangeBtn}>
+            Save Change
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Edit Details Modal (when viewing room details)
+  const renderEditDetailsModal = () => {
+    if (!isEditingDetails) return null;
+
+    return (
+      <div style={STYLES.logoutModalOverlay} onClick={() => setIsEditingDetails(false)}>
+        <div style={{ ...STYLES.editModal, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => setIsEditingDetails(false)} style={STYLES.closeIcon}>❌</button>
+          
+          <h2 style={STYLES.editModalTitle}>Edit Details</h2>
+          
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Room Number:</label>
+            <input
+              type="text"
+              value={editForm.number || ''}
+              onChange={(e) => setEditForm({ ...editForm, number: e.target.value })}
+              style={STYLES.input}
+              disabled
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Inclusions:</label>
+            <input
+              type="text"
+              value={editForm.inclusions || ''}
+              onChange={(e) => setEditForm({ ...editForm, inclusions: e.target.value })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Address:</label>
+            <input
+              type="text"
+              value={editForm.address || ''}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Others:</label>
+            <textarea
+              value={editForm.others || ''}
+              onChange={(e) => setEditForm({ ...editForm, others: e.target.value })}
+              style={{ ...STYLES.input, minHeight: 80, resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={STYLES.formGroup}>
+            <label style={STYLES.detailLabel}>Price (₱):</label>
+            <input
+              type="number"
+              value={editForm.price || ''}
+              onChange={(e) => setEditForm({ ...editForm, price: parseInt(e.target.value) || 0 })}
+              style={STYLES.input}
+            />
+          </div>
+
+          <button onClick={handleSaveRoomDetails} style={STYLES.saveChangeBtn}>
+            Save Change
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Booking Modal
+  const renderBookingModal = () => {
+    if (!showBookingModal || !selectedRoom) return null;
+
+    return (
+      <div style={STYLES.logoutModalOverlay} onClick={() => setShowBookingModal(false)}>
+        <div style={STYLES.bookingModal} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => setShowBookingModal(false)} style={STYLES.closeIcon}>❌</button>
+          
+          <h2 style={STYLES.bookingModalTitle}>Reservation Form</h2>
+          
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <img src={selectedRoom.image} alt={selectedRoom.number} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }} />
+          </div>
+
+          <div style={STYLES.bookingFormRow}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Full Name:</label>
+              <input
+                type="text"
+                placeholder="E.g., Nabunturan, Justin"
+                value={bookingForm.full_name}
+                onChange={(e) => setBookingForm({ ...bookingForm, full_name: e.target.value })}
+                style={STYLES.bookingInput}
+              />
+            </div>
+          </div>
+
+          <div style={STYLES.bookingFormRow}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Email Address:</label>
+              <input
+                type="email"
+                placeholder="E.g., Justin@gmail.com"
+                value={bookingForm.email}
+                onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                style={STYLES.bookingInput}
+              />
+            </div>
+          </div>
+
+          <div style={STYLES.bookingFormRow}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Contact Number:</label>
+              <input
+                type="text"
+                placeholder="09212312312312"
+                value={bookingForm.contact_number}
+                onChange={(e) => setBookingForm({ ...bookingForm, contact_number: e.target.value })}
+                style={STYLES.bookingInput}
+              />
+            </div>
+          </div>
+
+          <div style={STYLES.bookingFormRow}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Down payment:</label>
+              <input
+                type="number"
+                placeholder="P 5,000.00"
+                value={bookingForm.down_payment}
+                onChange={(e) => setBookingForm({ ...bookingForm, down_payment: e.target.value })}
+                style={STYLES.bookingInput}
+              />
+            </div>
+          </div>
+
+          <div style={STYLES.bookingFormRow}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Mode of Payment:</label>
+              <select
+                value={bookingForm.mode_of_payment}
+                onChange={(e) => setBookingForm({ ...bookingForm, mode_of_payment: e.target.value })}
+                style={STYLES.bookingSelect}
+              >
+                <option value="Cash">Cash</option>
+                <option value="Gcash">Gcash</option>
+              </select>
+            </div>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Reservation Status:</label>
+              <select
+                value={bookingForm.reservation_status}
+                onChange={(e) => setBookingForm({ ...bookingForm, reservation_status: e.target.value })}
+                style={STYLES.bookingSelect}
+              >
+                <option value="Available">Available</option>
+                <option value="Occupied">Occupied</option>
+              </select>
+            </div>
+          </div>
+
+          <button onClick={handleBookingSubmit} style={STYLES.confirmBtn}>
+            Confirm
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={STYLES.pageContainer}>
+      <Sidebar onNavigate={onNavigate} currentPage="reservation" onLogout={handleLogout} />
+
+      <div style={STYLES.contentContainer}>
+        <h2 style={STYLES.pageTitle}>📅 RESERVATION</h2>
+
+        {selectedRoom ? renderRoomDetails() : renderRoomGrid()}
+
+        {renderEditModal()}
+        {renderEditDetailsModal()}
+        {renderBookingModal()}
+
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </div>
+
+      <LogoutModal 
+        isOpen={showLogoutModal} 
+        onClose={() => setShowLogoutModal(false)} 
+        onConfirm={confirmLogout} 
+      />
+    </div>
+  );
+}
+
+// ============================================
 // MAIN APP COMPONENT
 // ============================================
 
@@ -1279,6 +2272,7 @@ function App() {
     <div>
       {currentPage === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
       {currentPage === 'tenants' && <TenantManagement onNavigate={handleNavigate} />}
+      {currentPage === 'reservation' && <ReservationManagement onNavigate={handleNavigate} />}
     </div>
   );
 }
