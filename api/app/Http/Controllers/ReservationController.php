@@ -32,7 +32,7 @@ class ReservationController extends Controller
             'contact_number' => 'required|string|max:20',
             'down_payment' => 'required|numeric|min:0',
             'mode_of_payment' => 'required|in:Cash,Gcash',
-            'reservation_status' => 'required|in:Available,Occupied'
+            'reservation_status' => 'required|in:Available,Occupied,Pending'
         ]);
 
         if ($validator->fails()) {

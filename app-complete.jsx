@@ -738,7 +738,11 @@ function Sidebar({ onNavigate, currentPage, onLogout }) {
         >
           <span style={STYLES.menuIcon}>📅</span> Reservation
         </div>
-        <div className="menu-item" style={STYLES.menuItem}>
+        <div 
+          className="menu-item"
+          style={getMenuItemStyle('billing')}
+          onClick={() => onNavigate('billing')}
+        >
           <span style={STYLES.menuIcon}>💰</span> Billing
         </div>
         <div className="menu-item" style={STYLES.menuItem}>
@@ -1152,7 +1156,7 @@ function EditViewModal({ tenant, editForm, setEditForm, onClose, onSave, errors 
   );
 }
 
-function AddModal({ addForm, setAddForm, onClose, onSave, errors }) {
+function AddModal({ addForm, setAddForm, onClose, onSave, errors, reservations = [] }) {
   const [rooms, setRooms] = useState([]);
   
   // Fetch room availability from localStorage
@@ -1248,15 +1252,29 @@ function AddModal({ addForm, setAddForm, onClose, onSave, errors }) {
             onChange={(e) => setAddForm({ ...addForm, room: e.target.value })}
           >
             <option value="">Select Room</option>
-            {rooms.map(room => (
-              <option 
-                value={room.number} 
-                disabled={room.status === 'occupied'}
-                key={room.id}
-              >
-                {room.number} {room.status === 'occupied' ? '🔴 Occupied' : '🟢 Available'}
-              </option>
-            ))}
+            {rooms.map(room => {
+              // Check if room is reserved
+              const reservation = reservations.find(r => r.room_number === room.number);
+              const isReserved = reservation !== undefined;
+              const isDisabled = room.status === 'occupied' || isReserved;
+              
+              let statusLabel = '🟢 Available';
+              if (room.status === 'occupied') {
+                statusLabel = '🔴 Occupied';
+              } else if (isReserved) {
+                statusLabel = '� Reserved';
+              }
+              
+              return (
+                <option 
+                  value={room.number} 
+                  disabled={isDisabled}
+                  key={room.id}
+                >
+                  {room.number} {statusLabel}
+                </option>
+              );
+            })}
           </select>
           {errors.room && <p style={errorText}>{errors.room}</p>}
         </div>
@@ -1322,6 +1340,7 @@ function AddModal({ addForm, setAddForm, onClose, onSave, errors }) {
 
 function TenantManagement({ onNavigate }) {
   const [tenants, setTenants] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -1366,8 +1385,21 @@ function TenantManagement({ onNavigate }) {
       setToast({ message: "❌ Failed to fetch tenants", type: "error" });
     }
   };
+
+  const fetchReservations = async () => {
+    try {
+      const res = await fetch(RESERVATION_API_URL);
+      const data = await res.json();
+      setReservations(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error fetching reservations:', err);
+    }
+  };
   
-  useEffect(() => { fetchTenants(); }, []);
+  useEffect(() => { 
+    fetchTenants(); 
+    fetchReservations();
+  }, []);
 
   const validateForm = (form) => {
     const errs = {};
@@ -1561,6 +1593,14 @@ function TenantManagement({ onNavigate }) {
     setIsEditOpen(true);
   };
 
+  // Helper function to check if a room is reserved (not occupied by a tenant)
+  const isRoomReserved = (roomNumber) => {
+    return reservations.some(reservation => 
+      reservation.room_number === roomNumber && 
+      reservation.reservation_status === 'Pending'
+    );
+  };
+
   const handleLogout = useCallback(() => {
     setShowLogoutModal(true);
   }, []);
@@ -1598,28 +1638,32 @@ function TenantManagement({ onNavigate }) {
                   <td colSpan="7" style={STYLES.loadingContainer}>No tenants found</td>
                 </tr>
               ) : (
-                tenants.map((tenant) => (
-                  <tr key={tenant.id}>
-                    <td style={STYLES.tableCell}>
-                      <img 
-                        src={getAvatarUrl(tenant)} 
-                        alt="avatar" 
-                        width={50} 
-                        height={50} 
-                        style={STYLES.avatarStyle} 
-                      />
-                    </td>
-                    <td style={STYLES.tableCell}>{tenant.room}</td>
-                    <td style={STYLES.tableCell}>{tenant.name}</td>
-                    <td style={STYLES.tableCell}>{tenant.gender}</td>
-                    <td style={STYLES.tableCell}>{tenant.contact}</td>
-                    <td style={STYLES.tableCell}>{tenant.email}</td>
-                    <td style={STYLES.tableCell}>
-                      <button style={getButtonStyle("#3b82f6")} onClick={() => openEdit(tenant)}>View/Edit</button>
-                      <button style={getButtonStyle("#ef4444", { marginLeft: 5 })} onClick={() => handleDelete(tenant.id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))
+                tenants.map((tenant) => {
+                  const reserved = isRoomReserved(tenant.room);
+                  const textColor = reserved ? '#f59e0b' : '#000000'; // Yellow for reserved, black for normal
+                  return (
+                    <tr key={`tenant-${tenant.id}`}>
+                      <td style={STYLES.tableCell}>
+                        <img 
+                          src={getAvatarUrl(tenant)} 
+                          alt="avatar" 
+                          width={50} 
+                          height={50} 
+                          style={STYLES.avatarStyle} 
+                        />
+                      </td>
+                      <td style={{...STYLES.tableCell, color: textColor}}>{tenant.room}</td>
+                      <td style={{...STYLES.tableCell, color: textColor}}>{tenant.name}</td>
+                      <td style={{...STYLES.tableCell, color: textColor}}>{tenant.gender}</td>
+                      <td style={{...STYLES.tableCell, color: textColor}}>{tenant.contact}</td>
+                      <td style={{...STYLES.tableCell, color: textColor}}>{tenant.email}</td>
+                      <td style={STYLES.tableCell}>
+                        <button style={getButtonStyle("#3b82f6")} onClick={() => openEdit(tenant)}>View/Edit</button>
+                        <button style={getButtonStyle("#ef4444", { marginLeft: 5 })} onClick={() => handleDelete(tenant.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1631,7 +1675,8 @@ function TenantManagement({ onNavigate }) {
             setAddForm={setAddForm} 
             onClose={() => { setIsAddOpen(false); setErrors({}); }} 
             onSave={handleAddTenant} 
-            errors={errors} 
+            errors={errors}
+            reservations={reservations}
           />
         )}
         {isEditOpen && selectedTenant && (
@@ -1663,9 +1708,12 @@ function TenantManagement({ onNavigate }) {
 function ReservationManagement({ onNavigate }) {
   const [rooms, setRooms] = useState([]);
   const [tenants, setTenants] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedReservation, setSelectedReservation] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReservationModal, setShowReservationModal] = useState(false);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -1675,7 +1723,7 @@ function ReservationManagement({ onNavigate }) {
     contact_number: '',
     down_payment: '',
     mode_of_payment: 'Cash',
-    reservation_status: 'Available'
+    reservation_status: 'Pending'
   });
   const [toast, setToast] = useState(null);
 
@@ -1731,9 +1779,21 @@ function ReservationManagement({ onNavigate }) {
     }
   }, []);
 
+  // Fetch reservations
+  const fetchReservations = useCallback(async () => {
+    try {
+      const res = await fetch(RESERVATION_API_URL);
+      const data = await res.json();
+      setReservations(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error fetching reservations:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTenants();
-  }, [fetchTenants]);
+    fetchReservations();
+  }, [fetchTenants, fetchReservations]);
 
   const handleLogout = useCallback(() => {
     setShowLogoutModal(true);
@@ -1859,8 +1919,11 @@ function ReservationManagement({ onNavigate }) {
           contact_number: '',
           down_payment: '',
           mode_of_payment: 'Cash',
-          reservation_status: 'Available'
+          reservation_status: 'Pending'
         });
+
+        // Refresh reservations list
+        fetchReservations();
 
         // Update room status if reservation is Occupied
         if (bookingForm.reservation_status === 'Occupied') {
@@ -1873,46 +1936,106 @@ function ReservationManagement({ onNavigate }) {
           localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
         }
       } else {
-        setToast({ message: "❌ " + (data.message || "Failed to create reservation"), type: "error" });
+        const errorMsg = data.message || data.error || "Failed to create reservation";
+        setToast({ message: "❌ " + errorMsg, type: "error" });
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
       setToast({ message: "❌ Error creating reservation. Please try again.", type: "error" });
     }
-  }, [bookingForm, selectedRoom, rooms]);
+  }, [bookingForm, selectedRoom, rooms, fetchReservations]);
+
+  // Handle cancel reservation
+  const handleCancelReservation = async (reservationId) => {
+    if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
+
+    try {
+      const response = await fetch(`${RESERVATION_API_URL}/${reservationId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setToast({ message: "✅ Reservation cancelled successfully!", type: "success" });
+        setShowReservationModal(false);
+        setSelectedReservation(null);
+        fetchReservations(); // Refresh reservations
+      } else {
+        setToast({ message: "❌ Failed to cancel reservation", type: "error" });
+      }
+    } catch (error) {
+      console.error('Error cancelling reservation:', error);
+      setToast({ message: "❌ Error cancelling reservation. Please try again.", type: "error" });
+    }
+  };
 
   // Room Grid View
-  const renderRoomGrid = () => (
-    <div style={STYLES.roomGrid}>
-      {rooms.map(room => (
-        <div key={room.id} style={STYLES.roomCard}>
-          <img src={room.image} alt={room.number} style={STYLES.roomImage} />
-          <div style={STYLES.roomContent}>
-            <h3 style={STYLES.roomTitle}>{room.number}</h3>
-            <div style={STYLES.roomButtons}>
-              <button 
-                onClick={() => handleEditRoom(room)} 
-                style={STYLES.editBtn}
-              >
-                Edit
-              </button>
-              <span style={room.status === 'occupied' ? STYLES.statusBadgeOccupied : STYLES.statusBadgeAvailable}>
-                {room.status === 'occupied' ? 'Occupied' : 'Available'}
-              </span>
+  const renderRoomGrid = () => {
+    return (
+      <div style={STYLES.roomGrid}>
+        {rooms.map(room => {
+          // Find reservation for this room
+          const reservation = reservations.find(r => r.room_number === room.number);
+          const isReserved = reservation !== undefined;
+          const statusColor = isReserved ? '#f59e0b' : (room.status === 'occupied' ? '#ef4444' : '#10b981');
+          const statusText = isReserved ? 'Reserved' : (room.status === 'occupied' ? 'Occupied' : 'Available');
+        
+        return (
+          <div key={room.id} style={STYLES.roomCard}>
+            <img src={room.image} alt={room.number} style={STYLES.roomImage} />
+            <div style={STYLES.roomContent}>
+              <h3 style={STYLES.roomTitle}>{room.number}</h3>
+              <div style={STYLES.roomButtons}>
+                <button 
+                  onClick={() => handleEditRoom(room)} 
+                  style={STYLES.editBtn}
+                >
+                  Edit
+                </button>
+                <span style={{...STYLES.statusBadgeAvailable, backgroundColor: statusColor}}>
+                  {statusText}
+                </span>
+              </div>
+              
+              {/* Show reservation info if room is reserved */}
+              {isReserved && (
+                <div style={{marginTop: 8, fontSize: '13px', color: '#f59e0b'}}>
+                  Reserved for:{' '}
+                  <button
+                    onClick={() => {
+                      setSelectedReservation(reservation);
+                      setShowReservationModal(true);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#f59e0b',
+                      fontWeight: '600',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      padding: 0,
+                      font: 'inherit'
+                    }}
+                  >
+                    {reservation.full_name}
+                  </button>
+                </div>
+              )}
+              
+              {room.status === 'available' && !isReserved && (
+                <button 
+                  onClick={() => handleViewRoom(room)} 
+                  style={{ ...STYLES.viewBtn, marginTop: 10, width: '100%' }}
+                >
+                  View
+                </button>
+              )}
             </div>
-            {room.status === 'available' && (
-              <button 
-                onClick={() => handleViewRoom(room)} 
-                style={{ ...STYLES.viewBtn, marginTop: 10, width: '100%' }}
-              >
-                View
-              </button>
-            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
-  );
+    );
+  };
 
   // Room Details View
   const renderRoomDetails = () => {
@@ -2218,7 +2341,7 @@ function ReservationManagement({ onNavigate }) {
                 onChange={(e) => setBookingForm({ ...bookingForm, reservation_status: e.target.value })}
                 style={STYLES.bookingSelect}
               >
-                <option value="Available">Available</option>
+                <option value="Pending">Pending (Reserved)</option>
                 <option value="Occupied">Occupied</option>
               </select>
             </div>
@@ -2226,6 +2349,72 @@ function ReservationManagement({ onNavigate }) {
 
           <button onClick={handleBookingSubmit} style={STYLES.confirmBtn}>
             Confirm
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Reservation Details Modal
+  const renderReservationModal = () => {
+    if (!showReservationModal || !selectedReservation) return null;
+
+    return (
+      <div style={STYLES.logoutModalOverlay} onClick={() => setShowReservationModal(false)}>
+        <div style={STYLES.bookingModal} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => setShowReservationModal(false)} style={STYLES.closeIcon}>❌</button>
+          
+          <h2 style={STYLES.bookingModalTitle}>Reservation Details</h2>
+          
+          <div style={STYLES.bookingFormGrid}>
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Full Name:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                {selectedReservation.full_name}
+              </div>
+            </div>
+
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Email:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                {selectedReservation.email}
+              </div>
+            </div>
+
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Contact Number:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                {selectedReservation.contact_number}
+              </div>
+            </div>
+
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Room Number:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                {selectedReservation.room_number}
+              </div>
+            </div>
+
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Down Payment:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                ₱{parseFloat(selectedReservation.down_payment).toLocaleString()}
+              </div>
+            </div>
+
+            <div style={STYLES.bookingFormGroup}>
+              <label style={STYLES.bookingLabel}>Mode of Payment:</label>
+              <div style={{...STYLES.bookingInput, backgroundColor: '#f3f4f6', padding: '10px'}}>
+                {selectedReservation.mode_of_payment}
+              </div>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => handleCancelReservation(selectedReservation.id)} 
+            style={{...STYLES.confirmBtn, backgroundColor: '#ef4444', marginTop: '15px'}}
+          >
+            Cancel Reservation
           </button>
         </div>
       </div>
@@ -2244,6 +2433,7 @@ function ReservationManagement({ onNavigate }) {
         {renderEditModal()}
         {renderEditDetailsModal()}
         {renderBookingModal()}
+        {renderReservationModal()}
 
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
@@ -2253,6 +2443,408 @@ function ReservationManagement({ onNavigate }) {
         onClose={() => setShowLogoutModal(false)} 
         onConfirm={confirmLogout} 
       />
+    </div>
+  );
+}
+
+// ============================================
+// BILLING AND FINANCE COMPONENT
+// ============================================
+
+function BillingAndFinance({ onNavigate }) {
+  const [tenants, setTenants] = useState([]);
+  const [billingData, setBillingData] = useState([]);
+  const [totalPaymentCollected, setTotalPaymentCollected] = useState(0);
+  const [outstandingBalance, setOutstandingBalance] = useState(0);
+  const [overdueTenantCount, setOverdueTenantCount] = useState(0);
+  const [collectionRate, setCollectionRate] = useState(0);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Fetch tenants data
+  const fetchTenants = useCallback(async () => {
+    try {
+      const res = await fetch(API_BASE_URL);
+      const data = await res.json();
+      const tenantList = Array.isArray(data.data) ? data.data : [];
+      setTenants(tenantList);
+      
+      // Process billing data
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      // Calculate total payment collected this month (placeholder - will be implemented later)
+      setTotalPaymentCollected(42000.00);
+      
+      // Calculate overdue tenants (tenants whose due date has passed)
+      const overdueCount = tenantList.filter(tenant => {
+        if (!tenant.created_at) return false;
+        const createdDate = new Date(tenant.created_at);
+        const dueDate = new Date(createdDate);
+        dueDate.setMonth(dueDate.getMonth() + 1); // Due date is 1 month after creation
+        return dueDate < currentDate;
+      }).length;
+      setOverdueTenantCount(overdueCount);
+      
+      // Prepare billing data for table
+      const billing = tenantList.map(tenant => {
+        const createdDate = new Date(tenant.created_at);
+        const dueDate = new Date(createdDate);
+        dueDate.setMonth(dueDate.getMonth() + 1); // Due date is 1 month after creation
+        
+        const isOverdue = dueDate < currentDate;
+        const isPaid = false; // Placeholder - will be implemented with payment system
+        
+        return {
+          id: tenant.id,
+          name: tenant.name,
+          unit: tenant.room,
+          amountDue: 1000, // Placeholder amount
+          dueDate: dueDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }),
+          dueDateObj: dueDate,
+          status: isPaid ? 'Paid' : (isOverdue ? 'Due' : 'Unpaid'),
+          statusColor: isPaid ? '#10b981' : (isOverdue ? '#ef4444' : '#f59e0b')
+        };
+      });
+      
+      setBillingData(billing);
+      
+      // Placeholder values for future implementation
+      setOutstandingBalance(15000);
+      setCollectionRate(43.5);
+      
+    } catch (err) {
+      console.error('Error fetching tenants:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTenants();
+  }, [fetchTenants]);
+
+  const handleLogout = useCallback(() => {
+    setShowLogoutModal(true);
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    setShowLogoutModal(false);
+    alert("✅ You have been logged out successfully!");
+    window.location.reload();
+  }, []);
+
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedBillingData = useMemo(() => {
+    let sortedData = [...billingData];
+    if (sortConfig.key) {
+      sortedData.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        
+        // Special handling for different data types
+        if (sortConfig.key === 'amountDue') {
+          aValue = parseFloat(aValue);
+          bValue = parseFloat(bValue);
+        } else if (sortConfig.key === 'dueDate') {
+          aValue = a.dueDateObj;
+          bValue = b.dueDateObj;
+        } else if (typeof aValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortedData;
+  }, [billingData, sortConfig]);
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return ' ↕';
+    }
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  return (
+    <div style={STYLES.pageContainer}>
+      <Sidebar onNavigate={onNavigate} currentPage="billing" onLogout={handleLogout} />
+
+      <div style={STYLES.contentContainer}>
+        <h2 style={STYLES.pageTitle}>BILLING AND FINANCE</h2>
+
+        {/* Stats Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 20,
+          marginBottom: 30
+        }}>
+          {/* Total Payment Collected */}
+          <div style={{
+            background: 'white',
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              Total Payment Collected
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 8 }}>
+              ₱{totalPaymentCollected.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              This Month
+            </div>
+          </div>
+
+          {/* Outstanding Balance */}
+          <div style={{
+            background: 'white',
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              Outstanding Balance
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 8 }}>
+              ₱{outstandingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              Current
+            </div>
+          </div>
+
+          {/* Overdue Tenant */}
+          <div style={{
+            background: 'white',
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              Overdue Tenant
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 8 }}>
+              {overdueTenantCount}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              Accounts
+            </div>
+          </div>
+
+          {/* Collection Rates */}
+          <div style={{
+            background: 'white',
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              Collection Rates
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 8 }}>
+              {collectionRate}%
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              This Month
+            </div>
+          </div>
+        </div>
+
+        {/* Billing Table */}
+        <div style={{
+          background: 'white',
+          borderRadius: 8,
+          border: '1px solid #e5e7eb',
+          padding: 20,
+          marginBottom: 30
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                <th 
+                  onClick={() => handleSort('name')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Tenant Name{getSortIcon('name')}
+                </th>
+                <th 
+                  onClick={() => handleSort('unit')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Unit{getSortIcon('unit')}
+                </th>
+                <th 
+                  onClick={() => handleSort('amountDue')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Amount Due{getSortIcon('amountDue')}
+                </th>
+                <th 
+                  onClick={() => handleSort('dueDate')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Due Date{getSortIcon('dueDate')}
+                </th>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  Status
+                </th>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'center',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedBillingData.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: 20, textAlign: 'center', color: '#6b7280' }}>
+                    No billing data available
+                  </td>
+                </tr>
+              ) : (
+                sortedBillingData.map(billing => (
+                  <tr key={billing.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {billing.name}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {billing.unit}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      ₱{billing.amountDue.toLocaleString()}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {billing.dueDate}
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        backgroundColor: billing.statusColor,
+                        color: 'white'
+                      }}>
+                        {billing.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: 12, textAlign: 'center' }}>
+                      <button style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: 18,
+                        cursor: 'pointer',
+                        color: '#3b82f6'
+                      }}>
+                        •••
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: 15, justifyContent: 'center' }}>
+          <button style={{
+            padding: '12px 32px',
+            background: '#475569',
+            color: 'white',
+            border: 'none',
+            borderRadius: 6,
+            fontSize: 16,
+            fontWeight: 500,
+            cursor: 'pointer'
+          }}>
+            Add Payee
+          </button>
+          <button style={{
+            padding: '12px 32px',
+            background: '#475569',
+            color: 'white',
+            border: 'none',
+            borderRadius: 6,
+            fontSize: 16,
+            fontWeight: 500,
+            cursor: 'pointer'
+          }}>
+            View History
+          </button>
+        </div>
+      </div>
+
+      {showLogoutModal && (
+        <LogoutModal 
+          onClose={() => setShowLogoutModal(false)} 
+          onConfirm={confirmLogout} 
+        />
+      )}
     </div>
   );
 }
@@ -2270,9 +2862,10 @@ function App() {
 
   return (
     <div>
-      {currentPage === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
-      {currentPage === 'tenants' && <TenantManagement onNavigate={handleNavigate} />}
-      {currentPage === 'reservation' && <ReservationManagement onNavigate={handleNavigate} />}
+      {currentPage === 'dashboard' && <Dashboard key="dashboard" onNavigate={handleNavigate} />}
+      {currentPage === 'tenants' && <TenantManagement key="tenants" onNavigate={handleNavigate} />}
+      {currentPage === 'reservation' && <ReservationManagement key="reservation" onNavigate={handleNavigate} />}
+      {currentPage === 'billing' && <BillingAndFinance key="billing" onNavigate={handleNavigate} />}
     </div>
   );
 }
