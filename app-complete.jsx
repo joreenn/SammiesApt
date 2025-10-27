@@ -2,6 +2,8 @@
 const { useState, useEffect, useMemo, useCallback } = React;
 const API_BASE_URL = 'http://localhost:8000/api/tenants';
 const RESERVATION_API_URL = 'http://localhost:8000/api/reservations';
+const PAYMENT_API_URL = 'http://localhost:8000/api/payments';
+const MESSAGE_API_URL = 'http://localhost:8000/api/messages';
 
 // ============================================
 // DEFAULT AVATAR PLACEHOLDERS (Data URIs - No 404 errors)
@@ -745,7 +747,11 @@ function Sidebar({ onNavigate, currentPage, onLogout }) {
         >
           <span style={STYLES.menuIcon}>💰</span> Billing
         </div>
-        <div className="menu-item" style={STYLES.menuItem}>
+        <div 
+          className="menu-item"
+          style={getMenuItemStyle('communication')}
+          onClick={() => onNavigate('communication')}
+        >
           <span style={STYLES.menuIcon}>💬</span> Communication
         </div>
         <div className="menu-item" style={STYLES.menuItem}>
@@ -2454,11 +2460,23 @@ function ReservationManagement({ onNavigate }) {
 function BillingAndFinance({ onNavigate }) {
   const [tenants, setTenants] = useState([]);
   const [billingData, setBillingData] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [totalPaymentCollected, setTotalPaymentCollected] = useState(0);
   const [outstandingBalance, setOutstandingBalance] = useState(0);
   const [overdueTenantCount, setOverdueTenantCount] = useState(0);
   const [collectionRate, setCollectionRate] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showHistoryView, setShowHistoryView] = useState(false);
+  const [showTenantSelectModal, setShowTenantSelectModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [paymentItems, setPaymentItems] = useState({
+    downpayment: { checked: false, amount: '' },
+    water: { checked: false, amount: '' },
+    electricity: { checked: false, amount: '' },
+    rent: { checked: false, amount: '' },
+    maintenance: { checked: false, amount: '' }
+  });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   // Fetch tenants data
@@ -2519,9 +2537,21 @@ function BillingAndFinance({ onNavigate }) {
     }
   }, []);
 
+  // Fetch payment history
+  const fetchPayments = useCallback(async () => {
+    try {
+      const res = await fetch(PAYMENT_API_URL);
+      const data = await res.json();
+      setPayments(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error fetching payments:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTenants();
-  }, [fetchTenants]);
+    fetchPayments();
+  }, [fetchTenants, fetchPayments]);
 
   const handleLogout = useCallback(() => {
     setShowLogoutModal(true);
@@ -2532,6 +2562,108 @@ function BillingAndFinance({ onNavigate }) {
     alert("✅ You have been logged out successfully!");
     window.location.reload();
   }, []);
+
+  // Handle Add Payee button click
+  const handleAddPayeeClick = () => {
+    setShowTenantSelectModal(true);
+  };
+
+  // Handle tenant selection
+  const handleTenantSelect = (tenant) => {
+    setSelectedTenant(tenant);
+    setShowTenantSelectModal(false);
+    setShowPaymentModal(true);
+    // Reset payment items
+    setPaymentItems({
+      downpayment: { checked: false, amount: '' },
+      water: { checked: false, amount: '' },
+      electricity: { checked: false, amount: '' },
+      rent: { checked: false, amount: '' },
+      maintenance: { checked: false, amount: '' }
+    });
+  };
+
+  // Handle payment item checkbox
+  const handlePaymentItemChange = (item, checked) => {
+    setPaymentItems(prev => ({
+      ...prev,
+      [item]: { ...prev[item], checked }
+    }));
+  };
+
+  // Handle payment amount change
+  const handlePaymentAmountChange = (item, amount) => {
+    setPaymentItems(prev => ({
+      ...prev,
+      [item]: { ...prev[item], amount }
+    }));
+  };
+
+  // Calculate total payment
+  const calculateTotalPayment = () => {
+    let total = 0;
+    Object.values(paymentItems).forEach(item => {
+      if (item.checked && item.amount) {
+        total += parseFloat(item.amount) || 0;
+      }
+    });
+    return total;
+  };
+
+  // Handle payment confirmation
+  const handlePaymentConfirm = async () => {
+    const totalAmount = calculateTotalPayment();
+    
+    if (totalAmount <= 0) {
+      alert('Please add at least one payment item with an amount.');
+      return;
+    }
+
+    // Create payment notes
+    const notes = Object.entries(paymentItems)
+      .filter(([_, item]) => item.checked && item.amount)
+      .map(([key, item]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ₱${parseFloat(item.amount).toLocaleString()}`)
+      .join(', ');
+
+    // Find tenant's due date from billing data
+    const tenantBilling = billingData.find(b => b.id === selectedTenant.id);
+    const dueDate = tenantBilling ? tenantBilling.dueDateObj : new Date();
+
+    try {
+      const response = await fetch(PAYMENT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tenant_id: selectedTenant.id,
+          tenant_name: selectedTenant.name,
+          room_number: selectedTenant.room,
+          amount: totalAmount,
+          payment_date: new Date().toISOString().split('T')[0],
+          due_date: dueDate.toISOString().split('T')[0],
+          payment_method: 'Cash', // Default, can be made selectable
+          notes: notes
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert('✅ Payment recorded successfully!');
+        setShowPaymentModal(false);
+        setSelectedTenant(null);
+        // Refresh data
+        fetchPayments();
+        fetchTenants();
+      } else {
+        alert('❌ Failed to record payment: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      alert('❌ Error recording payment. Please try again.');
+    }
+  };
 
   // Sorting function
   const handleSort = (key) => {
@@ -2580,12 +2712,41 @@ function BillingAndFinance({ onNavigate }) {
     return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
   };
 
+  // Sorted payment history
+  const sortedPayments = useMemo(() => {
+    let sorted = [...payments];
+    if (sortConfig.key) {
+      sorted.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        
+        if (sortConfig.key === 'amount') {
+          aValue = parseFloat(aValue);
+          bValue = parseFloat(bValue);
+        } else if (sortConfig.key === 'payment_date' || sortConfig.key === 'due_date') {
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        } else if (typeof aValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
+  }, [payments, sortConfig]);
+
   return (
     <div style={STYLES.pageContainer}>
       <Sidebar onNavigate={onNavigate} currentPage="billing" onLogout={handleLogout} />
 
-      <div style={STYLES.contentContainer}>
-        <h2 style={STYLES.pageTitle}>BILLING AND FINANCE</h2>
+      {!showHistoryView ? (
+        /* MAIN BILLING VIEW */
+        <div style={STYLES.contentContainer}>
+          <h2 style={STYLES.pageTitle}>BILLING AND FINANCE</h2>
 
         {/* Stats Cards */}
         <div style={{
@@ -2812,29 +2973,839 @@ function BillingAndFinance({ onNavigate }) {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: 15, justifyContent: 'center' }}>
-          <button style={{
-            padding: '12px 32px',
-            background: '#475569',
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            fontSize: 16,
-            fontWeight: 500,
-            cursor: 'pointer'
-          }}>
+          <button 
+            onClick={handleAddPayeeClick}
+            style={{
+              padding: '12px 32px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
             Add Payee
           </button>
-          <button style={{
-            padding: '12px 32px',
-            background: '#475569',
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            fontSize: 16,
-            fontWeight: 500,
-            cursor: 'pointer'
-          }}>
+          <button 
+            onClick={() => setShowHistoryView(true)}
+            style={{
+              padding: '12px 32px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
             View History
+          </button>
+        </div>
+      </div>
+      ) : (
+        /* PAYMENT HISTORY VIEW */
+        <div style={STYLES.contentContainer}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+            <h2 style={STYLES.pageTitle}>PAYMENT HISTORY</h2>
+            <button 
+              onClick={() => setShowHistoryView(false)}
+              style={{
+                padding: '10px 20px',
+                background: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              ← Back to Billing
+            </button>
+          </div>
+
+          {/* Payment History Table */}
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            padding: 20
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                  <th 
+                    onClick={() => handleSort('payment_date')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Payment Date{getSortIcon('payment_date')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('tenant_name')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Tenant Name{getSortIcon('tenant_name')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('room_number')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Room{getSortIcon('room_number')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('amount')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Amount{getSortIcon('amount')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('due_date')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Due Date{getSortIcon('due_date')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('payment_method')}
+                    style={{
+                      padding: 12,
+                      textAlign: 'left',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    Method{getSortIcon('payment_method')}
+                  </th>
+                  <th style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151'
+                  }}>
+                    Notes
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ padding: 20, textAlign: 'center', color: '#6b7280' }}>
+                      No payment history available
+                    </td>
+                  </tr>
+                ) : (
+                  sortedPayments.map(payment => (
+                    <tr key={payment.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                        {new Date(payment.payment_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                        {payment.tenant_name}
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                        {payment.room_number}
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50', fontWeight: 600 }}>
+                        ₱{parseFloat(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                        {new Date(payment.due_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: 4,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          backgroundColor: '#e0f2fe',
+                          color: '#0369a1'
+                        }}>
+                          {payment.payment_method}
+                        </span>
+                      </td>
+                      <td style={{ padding: 12, fontSize: 14, color: '#6b7280' }}>
+                        {payment.notes || '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {showLogoutModal && (
+        <LogoutModal 
+          onClose={() => setShowLogoutModal(false)} 
+          onConfirm={confirmLogout} 
+        />
+      )}
+
+      {/* Tenant Selection Modal */}
+      {showTenantSelectModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '24px',
+            maxWidth: 500,
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 20, color: '#2c3e50' }}>Add tenant</h3>
+              <button 
+                onClick={() => setShowTenantSelectModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              {tenants.map(tenant => {
+                // Check if tenant is unpaid (has overdue amount)
+                const billingInfo = billingData.find(b => b.tenant_id === tenant.id);
+                const isUnpaid = billingInfo && billingInfo.status === 'Overdue';
+                
+                return (
+                  <label 
+                    key={tenant.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '12px',
+                      marginBottom: 8,
+                      cursor: 'pointer',
+                      borderRadius: 4,
+                      transition: 'background 0.2s',
+                      ':hover': { background: '#f9fafb' }
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTenant?.id === tenant.id}
+                      onChange={() => setSelectedTenant(selectedTenant?.id === tenant.id ? null : tenant)}
+                      style={{
+                        marginRight: 12,
+                        width: 18,
+                        height: 18,
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ 
+                      fontSize: 16,
+                      color: isUnpaid ? '#ef4444' : '#2c3e50',
+                      fontWeight: isUnpaid ? 500 : 400
+                    }}>
+                      {tenant.name} {tenant.room_number ? `(Room ${tenant.room_number})` : ''}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowTenantSelectModal(false)}
+                style={{
+                  padding: '10px 24px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => selectedTenant && handleTenantSelect(selectedTenant)}
+                disabled={!selectedTenant}
+                style={{
+                  padding: '10px 24px',
+                  background: selectedTenant ? '#475569' : '#d1d5db',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: selectedTenant ? 'pointer' : 'not-allowed'
+                }}
+              >
+                Select
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Breakdown Modal */}
+      {showPaymentModal && selectedTenant && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '24px',
+            maxWidth: 500,
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 20, color: '#2c3e50' }}>
+                Tenant: {selectedTenant.name}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setSelectedTenant(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              {Object.entries(paymentItems).map(([key, item]) => (
+                <div 
+                  key={key}
+                  style={{
+                    padding: '12px',
+                    marginBottom: 8,
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 6
+                  }}
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={(e) => handlePaymentItemChange(key, e.target.checked)}
+                      style={{
+                        marginRight: 12,
+                        width: 18,
+                        height: 18,
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ 
+                      fontSize: 16,
+                      color: '#2c3e50',
+                      textTransform: 'capitalize',
+                      fontWeight: 500
+                    }}>
+                      {key}
+                    </span>
+                  </label>
+                  
+                  {item.checked && (
+                    <input
+                      type="number"
+                      value={item.amount}
+                      onChange={(e) => handlePaymentAmountChange(key, e.target.value)}
+                      placeholder="Enter amount"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 4,
+                        fontSize: 14
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              padding: '16px',
+              background: '#f9fafb',
+              borderRadius: 6,
+              marginBottom: 20,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>TOTAL AMOUNT</div>
+              <div style={{ fontSize: 24, fontWeight: 'bold', color: '#2c3e50' }}>
+                ₱{calculateTotalPayment().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setSelectedTenant(null);
+                }}
+                style={{
+                  padding: '10px 24px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaymentConfirm}
+                style={{
+                  padding: '10px 24px',
+                  background: '#475569',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// COMMUNICATION CENTER COMPONENT
+// ============================================
+
+function CommunicationCenter({ onNavigate }) {
+  const [messages, setMessages] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showTenantSelectModal, setShowTenantSelectModal] = useState(false);
+  const [showSendMessageModal, setShowSendMessageModal] = useState(false);
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [messageText, setMessageText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(4);
+
+  // Fetch messages
+  const fetchMessages = useCallback(async () => {
+    try {
+      const res = await fetch(MESSAGE_API_URL);
+      const data = await res.json();
+      setMessages(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      alert('❌ Failed to fetch messages');
+    }
+  }, []);
+
+  // Fetch tenants
+  const fetchTenants = useCallback(async () => {
+    try {
+      const res = await fetch(API_BASE_URL);
+      const data = await res.json();
+      setTenants(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error fetching tenants:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+    fetchTenants();
+  }, [fetchMessages, fetchTenants]);
+
+  const handleLogout = useCallback(() => {
+    setShowLogoutModal(true);
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    setShowLogoutModal(false);
+    alert("✅ You have been logged out successfully!");
+    window.location.reload();
+  }, []);
+
+  // Handle "Send to All" button click
+  const handleSendToAllClick = () => {
+    setShowTenantSelectModal(true);
+  };
+
+  // Handle tenant selection from the card grid
+  const handleTenantCardClick = (tenant) => {
+    setSelectedTenant(tenant);
+    setShowTenantSelectModal(false);
+    setShowSendMessageModal(true);
+  };
+
+  // Handle "Send Message" (broadcast) button click
+  const handleBroadcastClick = () => {
+    setShowBroadcastModal(true);
+  };
+
+  // Send individual message
+  const handleSendIndividualMessage = async () => {
+    if (!messageText.trim()) {
+      alert('⚠️ Please enter a message');
+      return;
+    }
+
+    try {
+      const response = await fetch(MESSAGE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: selectedTenant.id,
+          tenant_name: selectedTenant.name,
+          message: messageText,
+          is_broadcast: false
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Message sent successfully!');
+        setShowSendMessageModal(false);
+        setMessageText('');
+        setSelectedTenant(null);
+        fetchMessages();
+      } else {
+        alert('❌ Failed to send message');
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('❌ Error sending message');
+    }
+  };
+
+  // Send broadcast message to all tenants
+  const handleSendBroadcastMessage = async () => {
+    if (!messageText.trim()) {
+      alert('⚠️ Please enter a message');
+      return;
+    }
+
+    try {
+      const response = await fetch(MESSAGE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: null,
+          tenant_name: 'All Tenants',
+          message: messageText,
+          is_broadcast: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Broadcast message sent successfully!');
+        setShowBroadcastModal(false);
+        setMessageText('');
+        fetchMessages();
+      } else {
+        alert('❌ Failed to send broadcast message');
+      }
+    } catch (err) {
+      console.error('Error sending broadcast:', err);
+      alert('❌ Error sending broadcast message');
+    }
+  };
+
+  // Helper to get avatar URL
+  const getAvatarUrl = (tenant) => {
+    if (!tenant) return DEFAULT_AVATARS[tenant?.gender?.toLowerCase()] || DEFAULT_AVATARS.male;
+    if (tenant.avatar_url) {
+      return tenant.avatar_url.startsWith('http') 
+        ? tenant.avatar_url 
+        : `http://localhost:8000${tenant.avatar_url}`;
+    }
+    return DEFAULT_AVATARS[tenant.gender?.toLowerCase()] || DEFAULT_AVATARS.male;
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(messages.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentMessages = messages.slice(startIndex, endIndex);
+
+  return (
+    <div style={STYLES.pageContainer}>
+      <Sidebar onNavigate={onNavigate} currentPage="communication" onLogout={handleLogout} />
+      
+      <div style={STYLES.contentContainer}>
+        <h1 style={STYLES.pageTitle}>COMMUNICATION CENTER</h1>
+
+        {/* Messages Table */}
+        <div style={{
+          background: 'white',
+          borderRadius: 8,
+          padding: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          marginBottom: 30
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  <input type="checkbox" style={{ marginRight: 8 }} />
+                  Tenant
+                </th>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  Message
+                </th>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentMessages.length === 0 ? (
+                <tr>
+                  <td colSpan="3" style={{ padding: 20, textAlign: 'center', color: '#6b7280' }}>
+                    No messages yet
+                  </td>
+                </tr>
+              ) : (
+                currentMessages.map(message => (
+                  <tr key={message.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {message.is_broadcast ? (
+                        <span style={{ fontWeight: 500 }}>To All : </span>
+                      ) : (
+                        <span>To {message.tenant_name} : </span>
+                      )}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {message.message}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {formatDate(message.created_at)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 20,
+            padding: '0 12px'
+          }}>
+            <div style={{ fontSize: 14, color: '#6b7280' }}>
+              {startIndex + 1}-{Math.min(endIndex, messages.length)} of {messages.length} items
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ fontSize: 14, color: '#6b7280' }}>Rows per page</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  fontSize: 14,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value={4}>4</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '8px 12px',
+                  background: currentPage === 1 ? '#e5e7eb' : 'white',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ◀
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                style={{
+                  padding: '8px 12px',
+                  background: (currentPage === totalPages || totalPages === 0) ? '#e5e7eb' : 'white',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  cursor: (currentPage === totalPages || totalPages === 0) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ▶
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: 15, justifyContent: 'center' }}>
+          <button
+            onClick={handleSendToAllClick}
+            style={{
+              padding: '12px 32px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Send to All
+          </button>
+          <button
+            onClick={handleBroadcastClick}
+            style={{
+              padding: '12px 32px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Send Message
           </button>
         </div>
       </div>
@@ -2844,6 +3815,409 @@ function BillingAndFinance({ onNavigate }) {
           onClose={() => setShowLogoutModal(false)} 
           onConfirm={confirmLogout} 
         />
+      )}
+
+      {/* Tenant Selection Modal (Card Grid) */}
+      {showTenantSelectModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#f5f5dc',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: '90vw',
+            width: 1100,
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ margin: 0, fontSize: 24, color: '#2c3e50' }}>COMMUNICATION CENTER</h2>
+              <button 
+                onClick={() => setShowTenantSelectModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 28,
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Tenant Cards Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 20,
+              marginBottom: 24
+            }}>
+              {tenants.map(tenant => (
+                <div
+                  key={tenant.id}
+                  onClick={() => handleTenantCardClick(tenant)}
+                  style={{
+                    background: 'white',
+                    borderRadius: 8,
+                    padding: '20px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    ':hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                    }
+                  }}
+                >
+                  <div style={{
+                    background: '#475569',
+                    borderRadius: '8px 8px 0 0',
+                    padding: '40px 20px',
+                    marginBottom: 16,
+                    display: 'flex',
+                    justifyContent: 'center'
+                  }}>
+                    <img
+                      src={getAvatarUrl(tenant)}
+                      alt={tenant.name}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '4px solid white'
+                      }}
+                    />
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>
+                      Tenant Name: {tenant.name}
+                    </div>
+                    <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>
+                      Gender: {tenant.gender}
+                    </div>
+                    <div style={{ fontSize: 14, color: '#6b7280' }}>
+                      Room Number : {tenant.room}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowTenantSelectModal(false)}
+                style={{
+                  padding: '12px 32px',
+                  background: '#475569',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Individual Message Modal */}
+      {showSendMessageModal && selectedTenant && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#f5f5dc',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 900,
+            width: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ margin: 0, fontSize: 24, color: '#2c3e50' }}>COMMUNICATION CENTER</h2>
+            </div>
+
+            {/* Selected Tenant Info */}
+            <div style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: '20px',
+              marginBottom: 24,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16
+              }}>
+                <img
+                  src={getAvatarUrl(selectedTenant)}
+                  alt={selectedTenant.name}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '3px solid #475569'
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: '#2c3e50', marginBottom: 4 }}>
+                    Tenant Name: {selectedTenant.name}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#6b7280' }}>
+                    Room Number : {selectedTenant.room}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: '24px',
+              marginBottom: 24,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>Rawr</div>
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your message here..."
+                style={{
+                  width: '100%',
+                  minHeight: 200,
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowSendMessageModal(false);
+                  setMessageText('');
+                  setSelectedTenant(null);
+                }}
+                style={{
+                  padding: '12px 32px',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendIndividualMessage}
+                style={{
+                  padding: '12px 32px',
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                <span>✈</span> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Message Modal */}
+      {showBroadcastModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#f5f5dc',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 900,
+            width: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ margin: 0, fontSize: 24, color: '#2c3e50' }}>COMMUNICATION CENTER</h2>
+            </div>
+
+            {/* All Tenants Avatars (Compressed) */}
+            <div style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: '20px',
+              marginBottom: 24,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: -8,
+                marginBottom: 12
+              }}>
+                {tenants.slice(0, 8).map((tenant, index) => (
+                  <img
+                    key={tenant.id}
+                    src={getAvatarUrl(tenant)}
+                    alt={tenant.name}
+                    title={tenant.name}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid white',
+                      marginLeft: index > 0 ? -12 : 0,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                ))}
+                {tenants.length > 8 && (
+                  <div style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background: '#475569',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    border: '3px solid white',
+                    marginLeft: -12,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    +{tenants.length - 8}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: '24px',
+              marginBottom: 24,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>Rawr</div>
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your broadcast message here..."
+                style={{
+                  width: '100%',
+                  minHeight: 200,
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowBroadcastModal(false);
+                  setMessageText('');
+                }}
+                style={{
+                  padding: '12px 32px',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendBroadcastMessage}
+                style={{
+                  padding: '12px 32px',
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                <span>✈</span> Send
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -2866,6 +4240,7 @@ function App() {
       {currentPage === 'tenants' && <TenantManagement key="tenants" onNavigate={handleNavigate} />}
       {currentPage === 'reservation' && <ReservationManagement key="reservation" onNavigate={handleNavigate} />}
       {currentPage === 'billing' && <BillingAndFinance key="billing" onNavigate={handleNavigate} />}
+      {currentPage === 'communication' && <CommunicationCenter key="communication" onNavigate={handleNavigate} />}
     </div>
   );
 }
