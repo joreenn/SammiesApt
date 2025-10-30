@@ -4,6 +4,8 @@ const API_BASE_URL = 'http://localhost:8000/api/tenants';
 const RESERVATION_API_URL = 'http://localhost:8000/api/reservations';
 const PAYMENT_API_URL = 'http://localhost:8000/api/payments';
 const MESSAGE_API_URL = 'http://localhost:8000/api/messages';
+const MAINTENANCE_API_URL = 'http://localhost:8000/api/maintenance-reports';
+const ADMIN_API_URL = 'http://localhost:8000/api/admin-profiles';
 
 // ============================================
 // DEFAULT AVATAR PLACEHOLDERS (Data URIs - No 404 errors)
@@ -706,68 +708,151 @@ function LogoutModal({ isOpen, onClose, onConfirm }) {
 // SIDEBAR COMPONENT
 // ============================================
 
-function Sidebar({ onNavigate, currentPage, onLogout }) {
+function Sidebar({ onNavigate, currentPage, isCollapsed, onToggleSidebar }) {
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const getMenuItemStyle = useCallback((page) => ({
     ...STYLES.menuItem,
-    background: currentPage === page ? "rgba(255,255,255,0.1)" : "transparent"
-  }), [currentPage]);
+    background: currentPage === page ? "rgba(255,255,255,0.1)" : "transparent",
+    justifyContent: isCollapsed ? 'center' : 'flex-start',
+    padding: isCollapsed ? '15px 10px' : '15px 20px'
+  }), [currentPage, isCollapsed]);
+
+  const handleLogout = useCallback(() => {
+    setShowLogoutModal(true);
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    setShowLogoutModal(false);
+    alert("✅ You have been logged out successfully!");
+    window.location.reload();
+  }, []);
+
+  const sidebarStyle = {
+    ...STYLES.sidebar,
+    width: isCollapsed ? 70 : 250,
+    transition: 'width 0.3s ease'
+  };
 
   return (
-    <div style={STYLES.sidebar}>
-      <h2 style={STYLES.sidebarHeader}>
-        THE SAMMIE'S<br />APARTMENT
-      </h2>
-      
-      <nav style={STYLES.sidebarNav}>
-        <div 
-          className="menu-item"
-          style={getMenuItemStyle('dashboard')}
-          onClick={() => onNavigate('dashboard')}
-        >
-          <span style={STYLES.menuIcon}>📊</span> Dashboard
+    <>
+      <div style={sidebarStyle}>
+        <div style={{
+          ...STYLES.sidebarHeader,
+          padding: isCollapsed ? '20px 10px' : '20px',
+          textAlign: isCollapsed ? 'center' : 'left',
+          fontSize: isCollapsed ? '14px' : '18px'
+        }}>
+          {isCollapsed ? '🏢' : <>THE SAMMIE'S<br />APARTMENT</>}
         </div>
-        <div 
-          className="menu-item"
-          style={getMenuItemStyle('tenants')}
-          onClick={() => onNavigate('tenants')}
-        >
-          <span style={STYLES.menuIcon}>👥</span> Tenant Management
-        </div>
-        <div 
-          className="menu-item"
-          style={getMenuItemStyle('reservation')}
-          onClick={() => onNavigate('reservation')}
-        >
-          <span style={STYLES.menuIcon}>📅</span> Reservation
-        </div>
-        <div 
-          className="menu-item"
-          style={getMenuItemStyle('billing')}
-          onClick={() => onNavigate('billing')}
-        >
-          <span style={STYLES.menuIcon}>💰</span> Billing
-        </div>
-        <div 
-          className="menu-item"
-          style={getMenuItemStyle('communication')}
-          onClick={() => onNavigate('communication')}
-        >
-          <span style={STYLES.menuIcon}>💬</span> Communication
-        </div>
-        <div className="menu-item" style={STYLES.menuItem}>
-          <span style={STYLES.menuIcon}>🔧</span> Maintenance
-        </div>
-        <div className="menu-item" style={STYLES.menuItem}>
-          <span style={STYLES.menuIcon}>⚙️</span> Admin Settings
-        </div>
-      </nav>
+        
+        <nav style={STYLES.sidebarNav}>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('dashboard')}
+            onClick={() => onNavigate('dashboard')}
+            title="Dashboard"
+          >
+            <span style={STYLES.menuIcon}>📊</span> {!isCollapsed && 'Dashboard'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('tenants')}
+            onClick={() => onNavigate('tenants')}
+            title="Tenant Management"
+          >
+            <span style={STYLES.menuIcon}>👥</span> {!isCollapsed && 'Tenant Management'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('reservation')}
+            onClick={() => onNavigate('reservation')}
+            title="Reservation"
+          >
+            <span style={STYLES.menuIcon}>📅</span> {!isCollapsed && 'Reservation'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('billing')}
+            onClick={() => onNavigate('billing')}
+            title="Billing"
+          >
+            <span style={STYLES.menuIcon}>💰</span> {!isCollapsed && 'Billing'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('communication')}
+            onClick={() => onNavigate('communication')}
+            title="Communication"
+          >
+            <span style={STYLES.menuIcon}>💬</span> {!isCollapsed && 'Communication'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('maintenance')}
+            onClick={() => onNavigate('maintenance')}
+            title="Maintenance"
+          >
+            <span style={STYLES.menuIcon}>🔧</span> {!isCollapsed && 'Maintenance'}
+          </div>
+          <div 
+            className="menu-item"
+            style={getMenuItemStyle('admin')}
+            onClick={() => onNavigate('admin')}
+            title="Admin Settings"
+          >
+            <span style={STYLES.menuIcon}>⚙️</span> {!isCollapsed && 'Admin Settings'}
+          </div>
+        </nav>
 
-      <div style={STYLES.logoutContainer}>
-        <button onClick={onLogout} style={STYLES.logoutBtn}>
-          🚪 Logout
-        </button>
+        <div style={{
+          ...STYLES.logoutContainer,
+          left: isCollapsed ? 10 : 20,
+          right: isCollapsed ? 10 : 20
+        }}>
+          <button 
+            onClick={handleLogout} 
+            style={{
+              ...STYLES.logoutBtn,
+              width: isCollapsed ? '50px' : 'calc(100% - 40px)',
+              padding: isCollapsed ? '12px' : '12px'
+            }}
+            title="Logout"
+          >
+            {isCollapsed ? '🚪' : '🚪 Logout'}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Toggle Button */}
+      <button
+        onClick={onToggleSidebar}
+        style={{
+          position: 'fixed',
+          left: isCollapsed ? 70 : 250,
+          top: 20,
+          zIndex: 1000,
+          background: '#1e3a8a',
+          color: 'white',
+          border: 'none',
+          borderRadius: '0 8px 8px 0',
+          padding: '12px 8px',
+          cursor: 'pointer',
+          transition: 'left 0.3s ease',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.1)'
+        }}
+        title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+      >
+        {isCollapsed ? '▶' : '◀'}
+      </button>
+
+      {showLogoutModal && (
+        <LogoutModal 
+          onClose={() => setShowLogoutModal(false)} 
+          onConfirm={confirmLogout} 
+        />
+      )}
+    </>
   );
 }
 
@@ -797,10 +882,9 @@ function Toast({ message, type = "success", onClose }) {
 // DASHBOARD COMPONENT
 // ============================================
 
-function Dashboard({ onNavigate }) {
+function Dashboard({ onNavigate, isCollapsed }) {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -817,16 +901,6 @@ function Dashboard({ onNavigate }) {
   useEffect(() => {
     fetchTenants();
   }, [fetchTenants]);
-
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(true);
-  }, []);
-
-  const confirmLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    alert("✅ You have been logged out successfully!");
-    window.location.reload();
-  }, []);
 
   const currentDate = useMemo(() => new Date(), []);
   const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -846,15 +920,8 @@ function Dashboard({ onNavigate }) {
 
   return (
     <div style={STYLES.pageContainer}>
-      <Sidebar onNavigate={onNavigate} currentPage="dashboard" onLogout={handleLogout} />
-
       <div style={STYLES.contentContainer}>
-        <div style={STYLES.headerContainer}>
-          <h1 style={STYLES.pageTitle}>Dashboard</h1>
-          <button onClick={handleLogout} style={STYLES.topLogoutBtn}>
-            🚪 Logout
-          </button>
-        </div>
+        <h1 style={STYLES.pageTitle}>Dashboard</h1>
 
         <div style={STYLES.gridTwoColumns}>
           <div style={STYLES.card}>
@@ -944,12 +1011,6 @@ function Dashboard({ onNavigate }) {
           )}
         </div>
       </div>
-
-      <LogoutModal 
-        isOpen={showLogoutModal} 
-        onClose={() => setShowLogoutModal(false)} 
-        onConfirm={confirmLogout} 
-      />
     </div>
   );
 }
@@ -1354,7 +1415,6 @@ function TenantManagement({ onNavigate }) {
   const [addForm, setAddForm] = useState({ name: "", room: "", contact: "", email: "", gender: "Male", avatar: null });
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchTenants = async () => {
     try {
@@ -1394,7 +1454,11 @@ function TenantManagement({ onNavigate }) {
 
   const fetchReservations = async () => {
     try {
-      const res = await fetch(RESERVATION_API_URL);
+      const res = await fetch(RESERVATION_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
       const data = await res.json();
       setReservations(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
@@ -1607,20 +1671,8 @@ function TenantManagement({ onNavigate }) {
     );
   };
 
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(true);
-  }, []);
-
-  const confirmLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    alert("✅ You have been logged out successfully!");
-    window.location.reload();
-  }, []);
-
   return (
     <div style={STYLES.pageContainer}>
-      <Sidebar onNavigate={onNavigate} currentPage="tenants" onLogout={handleLogout} />
-      
       <div style={STYLES.contentContainer}>
         <h2 style={STYLES.pageTitle}>🏠 Tenant Management</h2>
         <button style={STYLES.addBtn} onClick={() => setIsAddOpen(true)}>➕ Add Tenant</button>
@@ -1697,12 +1749,6 @@ function TenantManagement({ onNavigate }) {
         )}
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
-
-      <LogoutModal 
-        isOpen={showLogoutModal} 
-        onClose={() => setShowLogoutModal(false)} 
-        onConfirm={confirmLogout} 
-      />
     </div>
   );
 }
@@ -1717,7 +1763,6 @@ function ReservationManagement({ onNavigate }) {
   const [reservations, setReservations] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -1788,7 +1833,11 @@ function ReservationManagement({ onNavigate }) {
   // Fetch reservations
   const fetchReservations = useCallback(async () => {
     try {
-      const res = await fetch(RESERVATION_API_URL);
+      const res = await fetch(RESERVATION_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
       const data = await res.json();
       setReservations(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
@@ -1800,16 +1849,6 @@ function ReservationManagement({ onNavigate }) {
     fetchTenants();
     fetchReservations();
   }, [fetchTenants, fetchReservations]);
-
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(true);
-  }, []);
-
-  const confirmLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    alert("✅ You have been logged out successfully!");
-    window.location.reload();
-  }, []);
 
   const handleViewRoom = useCallback((room) => {
     setSelectedRoom(room);
@@ -1899,6 +1938,7 @@ function ReservationManagement({ onNavigate }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           room_number: selectedRoom.number,
@@ -1910,6 +1950,14 @@ function ReservationManagement({ onNavigate }) {
           reservation_status: bookingForm.reservation_status
         })
       });
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Server returned non-JSON response:', await response.text());
+        setToast({ message: "❌ Server error. Please check if the API server is running.", type: "error" });
+        return;
+      }
 
       const data = await response.json();
 
@@ -1942,8 +1990,14 @@ function ReservationManagement({ onNavigate }) {
           localStorage.setItem('apartmentRooms', JSON.stringify(updatedRooms));
         }
       } else {
-        const errorMsg = data.message || data.error || "Failed to create reservation";
-        setToast({ message: "❌ " + errorMsg, type: "error" });
+        // Handle validation errors
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat().join(', ');
+          setToast({ message: "❌ Validation Error: " + errorMessages, type: "error" });
+        } else {
+          const errorMsg = data.message || data.error || "Failed to create reservation";
+          setToast({ message: "❌ " + errorMsg, type: "error" });
+        }
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -1957,7 +2011,10 @@ function ReservationManagement({ onNavigate }) {
 
     try {
       const response = await fetch(`${RESERVATION_API_URL}/${reservationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+        }
       });
 
       if (response.ok) {
@@ -2429,8 +2486,6 @@ function ReservationManagement({ onNavigate }) {
 
   return (
     <div style={STYLES.pageContainer}>
-      <Sidebar onNavigate={onNavigate} currentPage="reservation" onLogout={handleLogout} />
-
       <div style={STYLES.contentContainer}>
         <h2 style={STYLES.pageTitle}>📅 RESERVATION</h2>
 
@@ -2443,12 +2498,6 @@ function ReservationManagement({ onNavigate }) {
 
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
-
-      <LogoutModal 
-        isOpen={showLogoutModal} 
-        onClose={() => setShowLogoutModal(false)} 
-        onConfirm={confirmLogout} 
-      />
     </div>
   );
 }
@@ -2465,7 +2514,6 @@ function BillingAndFinance({ onNavigate }) {
   const [outstandingBalance, setOutstandingBalance] = useState(0);
   const [overdueTenantCount, setOverdueTenantCount] = useState(0);
   const [collectionRate, setCollectionRate] = useState(0);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showHistoryView, setShowHistoryView] = useState(false);
   const [showTenantSelectModal, setShowTenantSelectModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -2540,7 +2588,11 @@ function BillingAndFinance({ onNavigate }) {
   // Fetch payment history
   const fetchPayments = useCallback(async () => {
     try {
-      const res = await fetch(PAYMENT_API_URL);
+      const res = await fetch(PAYMENT_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
       const data = await res.json();
       setPayments(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
@@ -2552,16 +2604,6 @@ function BillingAndFinance({ onNavigate }) {
     fetchTenants();
     fetchPayments();
   }, [fetchTenants, fetchPayments]);
-
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(true);
-  }, []);
-
-  const confirmLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    alert("✅ You have been logged out successfully!");
-    window.location.reload();
-  }, []);
 
   // Handle Add Payee button click
   const handleAddPayeeClick = () => {
@@ -2634,6 +2676,7 @@ function BillingAndFinance({ onNavigate }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           tenant_id: selectedTenant.id,
@@ -2741,8 +2784,6 @@ function BillingAndFinance({ onNavigate }) {
 
   return (
     <div style={STYLES.pageContainer}>
-      <Sidebar onNavigate={onNavigate} currentPage="billing" onLogout={handleLogout} />
-
       {!showHistoryView ? (
         /* MAIN BILLING VIEW */
         <div style={STYLES.contentContainer}>
@@ -3189,13 +3230,6 @@ function BillingAndFinance({ onNavigate }) {
         </div>
       )}
 
-      {showLogoutModal && (
-        <LogoutModal 
-          onClose={() => setShowLogoutModal(false)} 
-          onConfirm={confirmLogout} 
-        />
-      )}
-
       {/* Tenant Selection Modal */}
       {showTenantSelectModal && (
         <div style={{
@@ -3475,7 +3509,6 @@ function BillingAndFinance({ onNavigate }) {
 function CommunicationCenter({ onNavigate }) {
   const [messages, setMessages] = useState([]);
   const [tenants, setTenants] = useState([]);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showTenantSelectModal, setShowTenantSelectModal] = useState(false);
   const [showSendMessageModal, setShowSendMessageModal] = useState(false);
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -3487,7 +3520,11 @@ function CommunicationCenter({ onNavigate }) {
   // Fetch messages
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await fetch(MESSAGE_API_URL);
+      const res = await fetch(MESSAGE_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
       const data = await res.json();
       setMessages(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
@@ -3511,16 +3548,6 @@ function CommunicationCenter({ onNavigate }) {
     fetchMessages();
     fetchTenants();
   }, [fetchMessages, fetchTenants]);
-
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(true);
-  }, []);
-
-  const confirmLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    alert("✅ You have been logged out successfully!");
-    window.location.reload();
-  }, []);
 
   // Handle "Send to All" button click
   const handleSendToAllClick = () => {
@@ -3549,7 +3576,10 @@ function CommunicationCenter({ onNavigate }) {
     try {
       const response = await fetch(MESSAGE_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({
           tenant_id: selectedTenant.id,
           tenant_name: selectedTenant.name,
@@ -3585,7 +3615,10 @@ function CommunicationCenter({ onNavigate }) {
     try {
       const response = await fetch(MESSAGE_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({
           tenant_id: null,
           tenant_name: 'All Tenants',
@@ -3639,12 +3672,8 @@ function CommunicationCenter({ onNavigate }) {
 
   return (
     <div style={STYLES.pageContainer}>
-      <Sidebar onNavigate={onNavigate} currentPage="communication" onLogout={handleLogout} />
-      
       <div style={STYLES.contentContainer}>
-        <h1 style={STYLES.pageTitle}>COMMUNICATION CENTER</h1>
-
-        {/* Messages Table */}
+        <h1 style={STYLES.pageTitle}>COMMUNICATION CENTER</h1>        {/* Messages Table */}
         <div style={{
           background: 'white',
           borderRadius: 8,
@@ -3809,13 +3838,6 @@ function CommunicationCenter({ onNavigate }) {
           </button>
         </div>
       </div>
-
-      {showLogoutModal && (
-        <LogoutModal 
-          onClose={() => setShowLogoutModal(false)} 
-          onConfirm={confirmLogout} 
-        />
-      )}
 
       {/* Tenant Selection Modal (Card Grid) */}
       {showTenantSelectModal && (
@@ -4224,23 +4246,1671 @@ function CommunicationCenter({ onNavigate }) {
 }
 
 // ============================================
+// MAINTENANCE MANAGEMENT COMPONENT
+// ============================================
+
+function MaintenanceManagement({ onNavigate }) {
+  const [reports, setReports] = useState([]);
+  const [showAddReportModal, setShowAddReportModal] = useState(false);
+  const [showConfirmStatusModal, setShowConfirmStatusModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    maintenance_type: '',
+    tenant_name: '',
+    room_number: '',
+    note: '',
+    start_date: new Date().toISOString().split('T')[0],
+    price: 0
+  });
+  
+  const [errors, setErrors] = useState({});
+
+  // Fetch maintenance reports
+  const fetchReports = useCallback(async () => {
+    try {
+      const res = await fetch(MAINTENANCE_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      const data = await res.json();
+      const reportsData = Array.isArray(data.data) ? data.data : [];
+      console.log('Fetched reports:', reportsData);
+      setReports(reportsData);
+    } catch (err) {
+      console.error('Error fetching maintenance reports:', err);
+      alert('❌ Failed to fetch maintenance reports');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Maintenance type validation - no symbols
+    if (!formData.maintenance_type.trim()) {
+      newErrors.maintenance_type = 'Maintenance type is required';
+    } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.maintenance_type)) {
+      newErrors.maintenance_type = 'Maintenance type must not contain symbols';
+    }
+    
+    // Tenant name validation - letters, spaces, dots, hyphens, apostrophes only
+    if (!formData.tenant_name.trim()) {
+      newErrors.tenant_name = 'Tenant name is required';
+    } else if (!/^[a-zA-Z\s\.\-\']+$/.test(formData.tenant_name)) {
+      newErrors.tenant_name = 'Tenant name must only contain letters, spaces, dots, hyphens, and apostrophes';
+    }
+    
+    // Room number validation - alphanumeric only
+    if (!formData.room_number.trim()) {
+      newErrors.room_number = 'Room number is required';
+    } else if (!/^[A-Z0-9]+$/i.test(formData.room_number)) {
+      newErrors.room_number = 'Room number must be alphanumeric only (no symbols)';
+    }
+    
+    // Start date validation
+    if (!formData.start_date) {
+      newErrors.start_date = 'Start date is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Handle add report
+  const handleAddReport = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const response = await fetch(MAINTENANCE_API_URL, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Maintenance report added successfully!');
+        setShowAddReportModal(false);
+        setFormData({
+          maintenance_type: '',
+          tenant_name: '',
+          room_number: '',
+          note: '',
+          start_date: new Date().toISOString().split('T')[0],
+          price: 0
+        });
+        setErrors({});
+        fetchReports();
+      } else {
+        alert('❌ Failed to add maintenance report');
+      }
+    } catch (err) {
+      console.error('Error adding report:', err);
+      alert('❌ Error adding maintenance report');
+    }
+  };
+
+  // Handle status change confirmation
+  const handleStatusClick = (report) => {
+    if (report.status === 'Ongoing') {
+      setSelectedReport(report);
+      setShowConfirmStatusModal(true);
+    }
+  };
+
+  // Confirm status change to Done
+  const confirmStatusChange = async () => {
+    if (!selectedReport) return;
+
+    try {
+      const response = await fetch(`${MAINTENANCE_API_URL}/${selectedReport.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Done' })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Status updated to Done!');
+        setShowConfirmStatusModal(false);
+        setSelectedReport(null);
+        fetchReports();
+      } else {
+        alert('❌ Failed to update status');
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('❌ Error updating status');
+    }
+  };
+
+  // Calendar functions
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  
+  const currentMonth = monthNames[currentDate.getMonth()];
+  const currentYear = currentDate.getFullYear();
+  
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  
+  // Get reports for calendar display
+  const getReportsForDate = (day) => {
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const dateStr = `${year}-${month}-${dayStr}`;
+    
+    const filtered = reports.filter(report => {
+      // Extract just the date part from the report's start_date
+      const reportDate = report.start_date ? report.start_date.split('T')[0] : report.start_date;
+      const matches = reportDate === dateStr;
+      
+      // Debug logging (can be removed later)
+      if (matches) {
+        console.log(`Match found for ${dateStr}: ${report.maintenance_type}`);
+      }
+      
+      return matches;
+    });
+    
+    return filtered;
+  };
+
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedReports = () => {
+    if (!sortConfig.key) return reports;
+    
+    return [...reports].sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return ' ↕';
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: '2-digit',
+      day: '2-digit',
+      year: '2-digit'
+    });
+  };
+
+  const sortedReports = getSortedReports();
+
+  return (
+    <div style={STYLES.pageContainer}>
+      <div style={STYLES.contentContainer}>
+        <h1 style={STYLES.pageTitle}>MAINTENANCE</h1>
+
+        {/* Calendar Section */}
+        <div style={{
+          background: 'white',
+          borderRadius: 8,
+          padding: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          marginBottom: 30,
+          position: 'relative'
+        }}>
+          <h2 style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginBottom: 20,
+            color: '#2c3e50'
+          }}>
+            {currentMonth.toUpperCase()} {currentYear}
+          </h2>
+
+          {/* Calendar Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: 1,
+            marginBottom: 20
+          }}>
+            {/* Day Headers */}
+            {['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map(day => (
+              <div key={day} style={{
+                padding: '12px',
+                textAlign: 'center',
+                fontWeight: 600,
+                fontSize: 12,
+                color: '#2c3e50',
+                background: '#f9fafb'
+              }}>
+                {day}
+              </div>
+            ))}
+
+            {/* Empty cells for days before month starts */}
+            {Array.from({ length: firstDayOfMonth }, (_, i) => (
+              <div key={`empty-${i}`} style={{
+                padding: '12px',
+                minHeight: 80,
+                background: '#f9fafb'
+              }} />
+            ))}
+
+            {/* Calendar days */}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const dayReports = getReportsForDate(day);
+              
+              return (
+                <div key={day} style={{
+                  padding: '8px',
+                  minHeight: 80,
+                  background: 'white',
+                  border: '1px solid #e5e7eb',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: '#2c3e50',
+                    marginBottom: 4
+                  }}>
+                    {day}
+                  </div>
+                  {dayReports.map(report => (
+                    <div key={report.id} style={{
+                      fontSize: 9,
+                      padding: '2px 4px',
+                      background: report.status === 'Done' ? '#22c55e' : '#f59e0b',
+                      color: 'white',
+                      borderRadius: 2,
+                      marginBottom: 2,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {report.maintenance_type} UNIT {report.room_number}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add Report Button */}
+          <button
+            onClick={() => setShowAddReportModal(true)}
+            style={{
+              position: 'absolute',
+              top: 24,
+              right: 24,
+              padding: '10px 24px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Add Report
+          </button>
+        </div>
+
+        {/* Reports Table */}
+        <div style={{
+          background: 'white',
+          borderRadius: 8,
+          padding: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                <th 
+                  onClick={() => handleSort('tenant_name')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Tenant Name{getSortIcon('tenant_name')}
+                </th>
+                <th 
+                  onClick={() => handleSort('room_number')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Room{getSortIcon('room_number')}
+                </th>
+                <th 
+                  onClick={() => handleSort('maintenance_type')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Repair{getSortIcon('maintenance_type')}
+                </th>
+                <th 
+                  onClick={() => handleSort('start_date')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Start Date{getSortIcon('start_date')}
+                </th>
+                <th 
+                  onClick={() => handleSort('price')}
+                  style={{
+                    padding: 12,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Price{getSortIcon('price')}
+                </th>
+                <th style={{
+                  padding: 12,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#374151'
+                }}>
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedReports.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: 20, textAlign: 'center', color: '#6b7280' }}>
+                    No maintenance reports yet
+                  </td>
+                </tr>
+              ) : (
+                sortedReports.map(report => (
+                  <tr key={report.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {report.tenant_name}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {report.room_number}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {report.maintenance_type}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      {formatDate(report.start_date)}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 14, color: '#2c3e50' }}>
+                      ₱ {report.price}
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      <span
+                        onClick={() => handleStatusClick(report)}
+                        style={{
+                          padding: '6px 16px',
+                          background: report.status === 'Done' ? '#22c55e' : '#f59e0b',
+                          color: 'white',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: report.status === 'Ongoing' ? 'pointer' : 'default',
+                          display: 'inline-block'
+                        }}
+                      >
+                        {report.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Report Modal */}
+      {showAddReportModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 600,
+            width: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{
+              margin: 0,
+              marginBottom: 24,
+              fontSize: 24,
+              color: '#2c3e50',
+              textAlign: 'center'
+            }}>
+              ADD REPORT
+            </h2>
+
+            {/* Maintenance Type */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Maintenance :
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., Faucet"
+                value={formData.maintenance_type}
+                onChange={(e) => handleInputChange('maintenance_type', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.maintenance_type ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#f9fafb'
+                }}
+              />
+              {errors.maintenance_type && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.maintenance_type}
+                </div>
+              )}
+            </div>
+
+            {/* Tenant Name */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Tenant Name :
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Santa Claus"
+                value={formData.tenant_name}
+                onChange={(e) => handleInputChange('tenant_name', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.tenant_name ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#f9fafb'
+                }}
+              />
+              {errors.tenant_name && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.tenant_name}
+                </div>
+              )}
+            </div>
+
+            {/* Room Number */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Room Number:
+              </label>
+              <input
+                type="text"
+                placeholder="015"
+                value={formData.room_number}
+                onChange={(e) => handleInputChange('room_number', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.room_number ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#f9fafb'
+                }}
+              />
+              {errors.room_number && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.room_number}
+                </div>
+              )}
+            </div>
+
+            {/* Note */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Note :
+              </label>
+              <textarea
+                placeholder="Add a note..."
+                value={formData.note}
+                onChange={(e) => handleInputChange('note', e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#f9fafb',
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => {
+                  setShowAddReportModal(false);
+                  setFormData({
+                    maintenance_type: '',
+                    tenant_name: '',
+                    room_number: '',
+                    note: '',
+                    start_date: new Date().toISOString().split('T')[0],
+                    price: 0
+                  });
+                  setErrors({});
+                }}
+                style={{
+                  padding: '12px 40px',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Back
+              </button>
+              <button
+                onClick={handleAddReport}
+                style={{
+                  padding: '12px 40px',
+                  background: '#475569',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Status Change Modal */}
+      {showConfirmStatusModal && selectedReport && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 400,
+            width: '90%',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+            <h2 style={{
+              margin: 0,
+              marginBottom: 12,
+              fontSize: 20,
+              color: '#2c3e50'
+            }}>
+              Confirm Status Change
+            </h2>
+            <p style={{
+              marginBottom: 24,
+              fontSize: 14,
+              color: '#6b7280'
+            }}>
+              Are you sure you want to mark this maintenance as <strong>Done</strong>?
+            </p>
+            <p style={{
+              marginBottom: 24,
+              fontSize: 14,
+              color: '#374151'
+            }}>
+              <strong>{selectedReport.maintenance_type}</strong> - Room {selectedReport.room_number}
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => {
+                  setShowConfirmStatusModal(false);
+                  setSelectedReport(null);
+                }}
+                style={{
+                  padding: '10px 24px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                style={{
+                  padding: '10px 24px',
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// ADMIN SETTINGS COMPONENT
+// ============================================
+
+function AdminSettings({ onNavigate }) {
+  const [adminProfile, setAdminProfile] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [previewAvatar, setPreviewAvatar] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    mobile_number: '',
+    password: '',
+    confirmPassword: ''
+  });
+  
+  const [errors, setErrors] = useState({});
+
+  // Fetch admin profile
+  const fetchAdminProfile = useCallback(async () => {
+    try {
+      const res = await fetch(ADMIN_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setAdminProfile(data.data);
+        setFormData({
+          name: data.data.name,
+          email: data.data.email,
+          mobile_number: data.data.mobile_number,
+          password: '',
+          confirmPassword: ''
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching admin profile:', err);
+      alert('❌ Failed to fetch admin profile');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdminProfile();
+  }, [fetchAdminProfile]);
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Name validation - letters, spaces, dots, hyphens, apostrophes only
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (!/^[a-zA-Z\s\.\-\']+$/.test(formData.name)) {
+      newErrors.name = 'Name must only contain letters, spaces, dots, hyphens, and apostrophes';
+    }
+    
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Mobile number validation - Philippine format
+    if (!formData.mobile_number.trim()) {
+      newErrors.mobile_number = 'Mobile number is required';
+    } else if (!/^(09\d{9}|\+639\d{9})$/.test(formData.mobile_number)) {
+      newErrors.mobile_number = 'Mobile number must be in Philippine format (e.g., 09123456789 or +639123456789)';
+    }
+    
+    // Password validation (only if password is provided)
+    if (formData.password) {
+      if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters long';
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Handle edit profile
+  const handleEditProfile = () => {
+    setShowEditModal(true);
+    setIsEditing(true);
+  };
+
+  // Handle avatar click
+  const handleAvatarClick = () => {
+    setShowAvatarModal(true);
+    setPreviewAvatar(adminProfile?.avatar || null);
+  };
+
+  // Handle avatar selection from predefined avatars
+  const handleSelectPredefinedAvatar = (avatarUrl) => {
+    setPreviewAvatar(avatarUrl);
+  };
+
+  // Handle file upload
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('❌ File size must be less than 2MB');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('❌ Please upload an image file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewAvatar(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Save avatar
+  const handleSaveAvatar = async () => {
+    if (!previewAvatar) {
+      alert('❌ Please select an avatar');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${ADMIN_API_URL}/${adminProfile.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: previewAvatar })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Avatar updated successfully!');
+        setShowAvatarModal(false);
+        fetchAdminProfile();
+      } else {
+        alert('❌ Failed to update avatar');
+      }
+    } catch (err) {
+      console.error('Error updating avatar:', err);
+      alert('❌ Error updating avatar');
+    }
+  };
+
+  // Handle save profile
+  const handleSaveProfile = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        mobile_number: formData.mobile_number
+      };
+
+      // Only include password if it was changed
+      if (formData.password) {
+        updateData.password = formData.password;
+      }
+
+      const response = await fetch(`${ADMIN_API_URL}/${adminProfile.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Profile updated successfully!');
+        setShowEditModal(false);
+        setIsEditing(false);
+        setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+        setErrors({});
+        fetchAdminProfile();
+      } else {
+        alert('❌ Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert('❌ Error updating profile');
+    }
+  };
+
+  // Get avatar URL (default Shrek avatar as shown in mockup)
+  const getAvatarUrl = () => {
+    if (adminProfile?.avatar) {
+      return adminProfile.avatar;
+    }
+    return DEFAULT_AVATARS.male; // Using default avatar
+  };
+
+  if (!adminProfile) {
+    return (
+      <div style={STYLES.pageContainer}>
+        <div style={STYLES.contentContainer}>
+          <h1 style={STYLES.pageTitle}>Admin Settings</h1>
+          <div style={{ textAlign: 'center', padding: 40, color: '#6b7280' }}>
+            Loading admin profile...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={STYLES.pageContainer}>
+      <div style={STYLES.contentContainer}>
+        <h1 style={STYLES.pageTitle}>Admin Settings</h1>
+
+        {/* Profile Card */}
+        <div style={{
+          background: 'white',
+          borderRadius: 8,
+          padding: '40px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          maxWidth: 600,
+          margin: '0 auto'
+        }}>
+          {/* Avatar and Email Section */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: 40,
+            paddingBottom: 20,
+            borderBottom: '1px solid #e5e7eb'
+          }}>
+            <div style={{ position: 'relative' }}>
+              <img
+                src={getAvatarUrl()}
+                alt="Admin Avatar"
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '3px solid #475569'
+                }}
+              />
+              <div 
+                onClick={handleAvatarClick}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: '#475569',
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: '2px solid white'
+                }}>
+                <span style={{ color: 'white', fontSize: 14 }}>✎</span>
+              </div>
+            </div>
+            <div style={{ marginLeft: 20 }}>
+              <div style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: '#2c3e50',
+                marginBottom: 4
+              }}>
+                Admin
+              </div>
+              <div style={{
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                {adminProfile.email}
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Information */}
+          <div style={{ marginBottom: 30 }}>
+            {/* Name */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Name
+              </label>
+              <div style={{
+                padding: '12px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: 6,
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                {adminProfile.name}
+              </div>
+            </div>
+
+            {/* Email */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Email account
+              </label>
+              <div style={{
+                padding: '12px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: 6,
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                {adminProfile.email}
+              </div>
+            </div>
+
+            {/* Mobile Number */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Mobile number
+              </label>
+              <div style={{
+                padding: '12px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: 6,
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                {adminProfile.mobile_number}
+              </div>
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Password
+              </label>
+              <div style={{
+                padding: '12px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: 6,
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                ••••••••••••
+              </div>
+            </div>
+          </div>
+
+          {/* Edit Profile Button */}
+          <button
+            onClick={handleEditProfile}
+            style={{
+              padding: '12px 32px',
+              background: '#475569',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            Edit Profile
+          </button>
+        </div>
+      </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 500,
+            width: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{
+              margin: 0,
+              marginBottom: 24,
+              fontSize: 24,
+              color: '#2c3e50',
+              textAlign: 'center'
+            }}>
+              Edit Profile
+            </h2>
+
+            {/* Name */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Name
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.name ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
+              {errors.name && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.name}
+                </div>
+              )}
+            </div>
+
+            {/* Email */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Email Account
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.email ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
+              {errors.email && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.email}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Number */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                Mobile Number
+              </label>
+              <input
+                type="text"
+                value={formData.mobile_number}
+                onChange={(e) => handleInputChange('mobile_number', e.target.value)}
+                placeholder="09123456789"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.mobile_number ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
+              {errors.mobile_number && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.mobile_number}
+                </div>
+              )}
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#374151'
+              }}>
+                New Password (leave blank to keep current)
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                placeholder="Enter new password"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${errors.password ? '#ef4444' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
+              {errors.password && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                  {errors.password}
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            {formData.password && (
+              <div style={{ marginBottom: 24 }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: 8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#374151'
+                }}>
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  placeholder="Confirm new password"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${errors.confirmPassword ? '#ef4444' : '#d1d5db'}`,
+                    borderRadius: 6,
+                    fontSize: 14
+                  }}
+                />
+                {errors.confirmPassword && (
+                  <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                    {errors.confirmPassword}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setIsEditing(false);
+                  setFormData({
+                    name: adminProfile.name,
+                    email: adminProfile.email,
+                    mobile_number: adminProfile.mobile_number,
+                    password: '',
+                    confirmPassword: ''
+                  });
+                  setErrors({});
+                }}
+                style={{
+                  padding: '12px 32px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                style={{
+                  padding: '12px 32px',
+                  background: '#475569',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Selection Modal */}
+      {showAvatarModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: '32px',
+            maxWidth: 600,
+            width: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{
+              margin: 0,
+              marginBottom: 24,
+              fontSize: 24,
+              color: '#2c3e50',
+              textAlign: 'center'
+            }}>
+              Change Avatar
+            </h2>
+
+            {/* Preview */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: 24
+            }}>
+              <img
+                src={previewAvatar || getAvatarUrl()}
+                alt="Avatar Preview"
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '3px solid #475569'
+                }}
+              />
+            </div>
+
+            {/* Predefined Avatars */}
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 12
+              }}>
+                Choose from Default Avatars
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                gap: 12
+              }}>
+                {Object.values(DEFAULT_AVATARS).map((avatarUrl, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleSelectPredefinedAvatar(avatarUrl)}
+                    style={{
+                      cursor: 'pointer',
+                      border: previewAvatar === avatarUrl ? '3px solid #475569' : '2px solid #e5e7eb',
+                      borderRadius: '50%',
+                      padding: 4,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <img
+                      src={avatarUrl}
+                      alt={`Avatar ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* File Upload */}
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 12
+              }}>
+                Or Upload Custom Image
+              </h3>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
+              <div style={{
+                fontSize: 12,
+                color: '#6b7280',
+                marginTop: 8
+              }}>
+                Max file size: 2MB. Supported formats: JPG, PNG, GIF
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => {
+                  setShowAvatarModal(false);
+                  setPreviewAvatar(null);
+                }}
+                style={{
+                  padding: '12px 32px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAvatar}
+                style={{
+                  padding: '12px 32px',
+                  background: '#475569',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Save Avatar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // MAIN APP COMPONENT
 // ============================================
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleNavigate = (page) => {
     setCurrentPage(page);
   };
 
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed(prev => !prev);
+  };
+
   return (
-    <div>
-      {currentPage === 'dashboard' && <Dashboard key="dashboard" onNavigate={handleNavigate} />}
-      {currentPage === 'tenants' && <TenantManagement key="tenants" onNavigate={handleNavigate} />}
-      {currentPage === 'reservation' && <ReservationManagement key="reservation" onNavigate={handleNavigate} />}
-      {currentPage === 'billing' && <BillingAndFinance key="billing" onNavigate={handleNavigate} />}
-      {currentPage === 'communication' && <CommunicationCenter key="communication" onNavigate={handleNavigate} />}
+    <div style={{ display: 'flex' }}>
+      <Sidebar 
+        onNavigate={handleNavigate} 
+        currentPage={currentPage}
+        isCollapsed={isSidebarCollapsed}
+        onToggleSidebar={handleToggleSidebar}
+      />
+      
+      <div style={{ flex: 1 }}>
+        {currentPage === 'dashboard' && <Dashboard key="dashboard" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'tenants' && <TenantManagement key="tenants" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'reservation' && <ReservationManagement key="reservation" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'billing' && <BillingAndFinance key="billing" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'communication' && <CommunicationCenter key="communication" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'maintenance' && <MaintenanceManagement key="maintenance" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+        {currentPage === 'admin' && <AdminSettings key="admin" onNavigate={handleNavigate} isCollapsed={isSidebarCollapsed} />}
+      </div>
     </div>
   );
 }
